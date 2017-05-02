@@ -1,10 +1,28 @@
 #include "server.h"
 player players[MAX_PLAYERS];
+int port;
+FILE *fpError;
 int amount_players=0;
 int running = TRUE;
 int stock_addr_size = sizeof(struct sockaddr_in);
 int main(int argc , char *argv[])
 {
+        int fdLock = open("./server.lock", O_RDWR);
+	if (fdLock == -1) { 
+		perror("Erreur ouverture fichier lock\n");
+		exit(EXIT_FAILURE);
+	}
+	if (flock(fdLock, LOCK_EX | LOCK_NB) == -1) { 
+		fprintf(stderr,"Ce daemon ne peut pas etre ouvert plusieurs  fois, une autre instance est en cours\n");
+		exit(EXIT_FAILURE);
+	}
+        if(argc!=2 && argc !=3){
+            fprintf(stderr, "Usage %s port [log_file]\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
+        if(argc==3)
+            fpError =freopen(argv[2], "a", stderr);
+        fprintf(stderr, "test\n");
 	int server_socket ;
 	struct sockaddr_in server_addr, client_addr;
         init_server(&server_socket, &server_addr);
@@ -13,6 +31,8 @@ int main(int argc , char *argv[])
                 add_player(&players[amount_players], server_socket);
             }
         }
+        if(argc==3)
+            fclose(fpError);
 	return 0;
 }
 void add_player(player * newPlayer, int server_socket){
@@ -20,7 +40,7 @@ void add_player(player * newPlayer, int server_socket){
         message recvClient;
         message sendClient;
 	//Accept and incoming connection
-	puts("Waiting for incoming connections...");
+	printf("Waiting for incoming connections...\n");
 
 	//accept connection from an incoming client
 	newPlayer->socket =  accept(server_socket, (struct sockaddr *) &(newPlayer->client_addr), (socklen_t*)&stock_addr_size);
@@ -44,8 +64,8 @@ void add_player(player * newPlayer, int server_socket){
 
 	if(read_size == 0)
 	{
-		printf("Client disconnected\n");
-		fflush(stdout);
+		fprintf(stderr, "Client disconnected\n");
+		fflush(stderr);
 	}
 	else if(read_size == -1)
 	{

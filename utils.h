@@ -6,6 +6,9 @@
 #include<string.h>
 #include<arpa/inet.h>
 #include<stdlib.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include <sys/file.h>
 #include "message.h"
 #define TRUE	1
 #define FALSE	0
