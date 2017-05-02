@@ -5,7 +5,9 @@
 #include<unistd.h>
 #include<string.h>
 #include<arpa/inet.h>
+#include "message.h"
 #define TRUE	1
 #define FALSE	0
-#define GREET_CLIENT  "Everybody get up it's time to slam now\nWe got a real jam goin' down\nWelcome to the Space Jam\nHere's your chance do your dance at the Space Jam\nAlright."
-#define SIGNUP_CLIENT_OK "Thank you ! You've been correctly signed up for the next game." 
+#define DAMIEN_PORT 8888
+#define ALEXANDRE_PORT 8889
+

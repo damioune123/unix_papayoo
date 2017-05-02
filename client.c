@@ -3,7 +3,9 @@ int main(int argc , char *argv[])
 {
     int sock;
     struct sockaddr_in server;
-    char message[1000] , server_reply[2000];
+    struct message mSent;
+    struct message mRecv;
+    char messageS[1000] , server_reply[2000];
      
     //Create socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
@@ -30,24 +32,25 @@ int main(int argc , char *argv[])
     while(1)
     {
         printf("Enter message : ");
-        scanf("%s" , message);
-         
+        scanf("%s" , messageS);
+        strcpy(mSent.payload, messageS);
+        mSent.code=2;
         //Send some data
-        if( send(sock , message , strlen(message) , 0) < 0)
+        if( send(sock , &mSent , sizeof(struct message) , 0) < 0)
         {
             puts("Send failed");
             return 1;
         }
          
         //Receive a reply from the server
-        if( recv(sock , server_reply , 2000 , 0) < 0)
+        if( recv(sock , &mRecv , sizeof(struct message) , 0) < 0)
         {
             puts("recv failed");
             break;
         }
          
         puts("Server reply :");
-        puts(server_reply);
+        printf("%s\n", mRecv.payload);
     }
      
     close(sock);
