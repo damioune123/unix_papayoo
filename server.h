@@ -1,7 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 #include "utils.h"
-#include<stdlib.h>
 
 #define EXIT_ERROR 1
 #define EXI_SUCCESS 0

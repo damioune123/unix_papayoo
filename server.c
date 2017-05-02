@@ -38,7 +38,8 @@ void add_player(player * newPlayer, int server_socket){
                 sendClient.code=C_OK;
                 strcpy(sendClient.payload, M_SIGNUP_CLIENT_OK);
 		//Send the message back to client
-		write(newPlayer->socket ,M_SIGNUP_CLIENT_OK , strlen(M_SIGNUP_CLIENT_OK));
+		write(newPlayer->socket ,&sendClient , sizeof(message));
+                break;
 	}
 
 	if(read_size == 0)
@@ -50,6 +51,8 @@ void add_player(player * newPlayer, int server_socket){
 	{
 		perror("recv failed");
 	}
+        else
+            amount_players++;
 
 }
 void init_server(int *server_socket, struct sockaddr_in *server_addr) {

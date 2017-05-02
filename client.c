@@ -1,58 +1,62 @@
 #include "client.h"
+struct message mSent;
+struct message mRecv;
 int main(int argc , char *argv[])
 {
-    int sock;
-    struct sockaddr_in server;
-    struct message mSent;
-    struct message mRecv;
-    char messageS[1000] , server_reply[2000];
-     
+    int socket;
+    struct sockaddr_in server_addr;
+    signup(&socket, &server_addr);
+    while(TRUE){
+        printf("tjrs connecte\n");
+    }
+    close(socket);
+    return 0;
+}
+void signup(int *client_socket , struct sockaddr_in *server_addr){
+    int inscriptionOK=FALSE;
+    char messageS[MESSAGE_MAX_LENGTH];
+
     //Create socket
-    sock = socket(AF_INET , SOCK_STREAM , 0);
-    if (sock == -1)
+    *client_socket = socket(AF_INET , SOCK_STREAM , 0);
+    if (*client_socket == -1)
     {
         printf("Could not create socket");
     }
-    puts("Socket created");
+    printf("Socket created\n");
      
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
-    server.sin_family = AF_INET;
-    server.sin_port = htons( 8888 );
+    server_addr->sin_addr.s_addr = inet_addr(HOST_IP);
+    server_addr->sin_family = AF_INET;
+    server_addr->sin_port = htons( DAMIEN_PORT );
  
     //Connect to remote server
-    if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+    if (connect(*client_socket , (struct sockaddr *)server_addr , sizeof(*server_addr)) < 0)
     {
         perror("connect failed. Error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
-     
-    puts("Connected\n");
-     
-    //keep communicating with server
-    while(1)
-    {
-        printf("Enter message : ");
+    printf("Connected to server\n");
+    while(inscriptionOK==FALSE){
+        printf("Enter your name : ");
         scanf("%s" , messageS);
         strcpy(mSent.payload, messageS);
-        mSent.code=2;
+        mSent.code=C_DEFAULT;
         //Send some data
-        if( send(sock , &mSent , sizeof(struct message) , 0) < 0)
+        if( send(*client_socket , &mSent , sizeof(struct message) , 0) < 0)
         {
-            puts("Send failed");
-            return 1;
+            printf("Send failed\n");
+            continue;
         }
          
         //Receive a reply from the server
-        if( recv(sock , &mRecv , sizeof(struct message) , 0) < 0)
+        if( recv(*client_socket , &mRecv , sizeof(struct message) , 0) < 0)
         {
-            puts("recv failed");
-            break;
+            printf("recv failed\n");
+            continue;
         }
-         
-        puts("Server reply :");
+        if(mRecv.code==C_OK)
+            inscriptionOK=TRUE;
         printf("%s\n", mRecv.payload);
     }
-     
-    close(sock);
-    return 0;
+
 }
+
