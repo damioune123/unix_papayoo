@@ -2,5 +2,12 @@
 #define SERVER_H
 #include "utils.h"
 #include<stdlib.h>
-#include<pthread.h>
+
+
+#define MAX_PLAYERS 4
+
+typedef struct player {
+	int socket;
+	char name[255];
+} player;
 #endif
