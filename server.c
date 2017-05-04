@@ -13,7 +13,7 @@ int main(int argc , char *argv[])
         struct timeval timeout = {0, 15000};
 	struct sockaddr_in server_addr, client_addr;
         int fdLock = open("./server.lock", O_RDWR);
-        fct_ptr dispatcher[] = {add_player, remove_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+        fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
 
 	if (fdLock == -1) { 
 		perror("Erreur ouverture fichier lock\n");
@@ -71,6 +71,9 @@ int main(int argc , char *argv[])
                     if (FD_ISSET(players[i].socket, &fds)) {
                         if (receive_msg(&mess, players[i].socket)) {
                             dispatcher[mess.code] (players[i].socket, mess);
+                        }
+                        else{
+                            remove_player(players[i].socket);
                         }
                     }
                 }
@@ -196,13 +199,10 @@ void clear_lobby() {
 }
 
 
-void remove_player( int socket, message mesRcv) {
+void remove_player( int socket) {
     int idx_player = find_player_id_by_socket(socket);
     char namePl[255];
     if(idx_player ==-1){
-        mess.code=C_SERVER_ERROR;
-        strcpy(mess.payload, M_SERVER_ERROR);
-        send_message(mess, socket);
         fprintf(stderr, "The server couldn't bind the socket with a player\n");
         return;
     }

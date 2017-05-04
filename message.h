@@ -15,6 +15,5 @@ typedef struct message {
 #define M_SIGNUP_CLIENT_OK "Thank you ! You've been correctly signed up for the next game.\n" 
 //client-> server
 #define C_ADD_PLAYER 0
-#define C_REMOVE_PLAYER 1
 #define C_DEFAULT 1337 
 //TO DO GERER L INDEX DU TABLEAU / CONSTANTE DE MANIERE PLUS COHERENTE

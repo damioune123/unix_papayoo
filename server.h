@@ -28,7 +28,7 @@ void shutdown_socket(int); //closes a given socket
 void shutdown_server(); //halts the server
 void add_client(int, struct sockaddr_in*); //adds a client to the fdset
 void add_player(int, message); //confirm connection and inform client
-void remove_player(int, message); //removes a player from the game
+void remove_player(int); //removes a player from the game
 int receive_msg(message*, int); //handles incoming messages
 void send_message(message, int);
 void start_game(); //starts the game
