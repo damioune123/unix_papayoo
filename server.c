@@ -77,6 +77,9 @@ int main(int argc , char *argv[])
                     }
                 }
             }
+            for(i =0 ; i < MAX_PLAYERS; i++){
+                printf("Joueur %i / name %s \n", i, players[i].name);
+            }
             if(game_running){
                 //TO DO
             }
@@ -195,15 +198,23 @@ void clear_lobby() {
 }
 
 
-void remove_player(player* players, int index, int sockopen) {
-    //TO DO
+void remove_player( int socket, message mesRcv) {
+    int idx_player = find_player_id_by_socket(socket);
+    if(idx_player ==-1){
+        mess.code=C_SERVER_ERROR;
+        strcpy(mess.payload, M_SERVER_ERROR);
+        send_message(mess, socket);
+        fprintf(stderr, "The server couldn't bind the socket with a player\n");
+        return;
+    }
+    strcpy(players[idx_player].name, mesRecv.payload);
     printf("Enter remove player method \n");
 }
 
 void send_message(message msg, int socket) {
-	if (send(socket, &msg, sizeof(struct message), 0) == -1) {
-		perror("Failed to send a mesesage to the socket");
-	}
+    if (send(socket, &msg, sizeof(struct message), 0) == -1) {
+        perror("Failed to send a mesesage to the socket");
+    }
 }
 void alarm_handler(int signum) {
     if (signum == SIGALRM) {
@@ -215,20 +226,21 @@ void alarm_handler(int signum) {
     }
 }
 void interrupt_handler(int signum) {
-	if (signum == SIGINT) {
-		shutdown_server();
-	}
+    if (signum == SIGINT) {
+        shutdown_server();
+    }
 }
 void start_game() {
-	start_round();
-	game_running = TRUE;
+    start_round();
+    game_running = TRUE;
 }
 
 void start_round() {
-	deal_cards();
-        //TO DO
+    deal_cards();
+    //TO DO
 }
 
 void deal_cards() {
     //TO DO
 }
+

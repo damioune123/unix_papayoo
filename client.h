@@ -1,3 +1,3 @@
 #include "utils.h"
-void connect(int*, struct sockaddr_in *);
-void signup();
+void connect_to_server(int*, struct sockaddr_in *);
+void signup(int *);

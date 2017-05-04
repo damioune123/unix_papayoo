@@ -1,34 +1,34 @@
 #include "client.h"
 struct message mSent; // Structure used to send messages to the server
 struct message mRecv; // Structure used to receive messages from the server
-int port; // The server's port
 char server_ip[20]; // The server's IP address (127.0.0.1 for testing)
-int socket; // The socket used to communicate with the server (file descriptor)
-struct sockaddr_in server_addr; // The server's socket address
+int port; // The server's port
 int main(int argc , char *argv[])
 {
+    struct sockaddr_in server_addr; // The server's socket address
+    int socket; // The socket used to communicate with the server (file descriptor)
     if(argc!=3){
         fprintf(stderr, "Usage %s ip port\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     strcpy(server_ip, argv[1]);
     port = atoi(argv[2]);
-    connect(&socket, &server_addr);
-    signup();
+    connect_to_server(&socket, &server_addr);
+    signup(&socket);
     while(TRUE){
-        printf("tjrs connecte\n");
     }
     close(socket);
     return 0;
 }
 
-void signup(){
+void signup(int * client_socket){
 	int inscriptionOK=FALSE;
+	char messageS[MESSAGE_MAX_LENGTH];
 	while(inscriptionOK==FALSE){
 		printf("Enter your name : ");
 		scanf("%s" , messageS);
 		strcpy(mSent.payload, messageS);
-		mSent.code=C_DEFAULT;
+		mSent.code=C_ADD_PLAYER;
 		//Send some data
 		if( send(*client_socket , &mSent , sizeof(struct message) , 0) < 0)
 		{
@@ -48,8 +48,7 @@ void signup(){
 	}
 }
 
-void connect(int *client_socket , struct sockaddr_in *server_addr){
-	char messageS[MESSAGE_MAX_LENGTH];
+void connect_to_server(int *client_socket , struct sockaddr_in *server_addr){
 
 	//Create socket
 	*client_socket = socket(AF_INET , SOCK_STREAM , 0);
