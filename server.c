@@ -13,7 +13,7 @@ int main(int argc , char *argv[])
         struct timeval timeout = {0, 15000};
 	struct sockaddr_in server_addr, client_addr;
         int fdLock = open("./server.lock", O_RDWR);
-        fct_ptr dispatcher[] = { };//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+        fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
 
 	if (fdLock == -1) { 
 		perror("Erreur ouverture fichier lock\n");
@@ -100,17 +100,18 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 			send_message(mess, new_cl_socket);
 
 		} else {
-			add_player(new_cl_socket);
+                        mess.code=C_OK;
+                        strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
+	                send_message(mess, socket);
 		}
 	}
 }
 
 void add_player(int socket) {
         //TO DO / BIZNESS ATTRIBUTE SET (CARDS, ...)
+        printf("Debug add player: socket :  %i & name %s\n", players[amount_players].socket, players[amount_players].name);
         players[amount_players++].socket = socket;
-        mess.code=C_REFUSE;
-        strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
-	send_message(mess, socket);
+        printf("Debug add player: socket :  %i & name %s\n", players[amount_players].socket, players[amount_players].name);
 	if (amount_players == 1) {
 		//first client, set an alarm for 30 seconds
 		alarm(COUNTDOWN);

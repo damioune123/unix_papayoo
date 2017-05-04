@@ -12,4 +12,6 @@ typedef struct message {
 #define M_GREET_CLIENT  "Everybody get up it's time to slam now\nWe got a real jam goin' down\nWelcome to the Space Jam\nHere's your chance do your dance at the Space Jam\nAlright.\n"
 #define M_SIGNUP_CLIENT_OK "Thank you ! You've been correctly signed up for the next game.\n" 
 //client-> server
-#define C_DEFAULT 5
+#define C_ADD_PLAYER 0
+#define C_DEFAULT 
+//TO DO GERER L INDEX DU TABLEAU / CONSTANTE DE MANIERE PLUS COHERENTE
