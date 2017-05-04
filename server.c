@@ -207,6 +207,7 @@ void remove_player( int socket) {
         return;
     }
     shutdown_socket(players[idx_player].socket);
+    players[idx_player].socket=0;
     strcpy(namePl, players[idx_player].name);
     for(int j=idx_player;j< amount_players; j++ ){
         players[j]=players[j+1];
