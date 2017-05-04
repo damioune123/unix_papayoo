@@ -15,13 +15,14 @@ int main(int argc , char *argv[])
 	strcpy(server_ip, argv[1]);
 	port = atoi(argv[2]);
 	connect_to_server(&socket, &server_addr);
+        if(receive_message( &mRecv, socket)==TRUE)
+                printf("%s", mRecv.payload);
 	signup(&socket);
 	while(TRUE){
-            if(receive_message(socket, &mRecv)==TRUE)
-                printf("%s\n", mRecv);
-
+            if(receive_message( &mRecv, socket)==TRUE)
+                printf("%s", mRecv.payload);
         }
-	close(socket);
+	shutdown_socket(socket);
 	return 0;
 }
 
