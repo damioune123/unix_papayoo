@@ -1,6 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 #include "utils.h"
+
 #define MIN_PLAYERS 2
 #define MAX_PLAYERS 4
 #define COUNTDOWN 30 
@@ -17,6 +18,8 @@ void init_server(int *, struct sockaddr_in *);
 void alarm_handler(int); //handles alarm timeouts
 void interrupt_handler(int); //shuts down the server when a SIGINT, SIGKILL OR SIGTERM  occurs
 void shutdown_server(); //halts the server
+void send_message_everybody(message);
+void clear_lobby();
 void add_client(int, struct sockaddr_in*); //adds a client to the fdset
 void add_player(int, message); //confirm connection and inform client
 void remove_player(int); //removes a player from the game

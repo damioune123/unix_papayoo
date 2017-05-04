@@ -168,7 +168,7 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr) {
 
 void shutdown_server() {
 	printf("server shutting down ..\n");
-	//clear_lobby(); ==> TO DO
+	clear_lobby();
         server_running = FALSE;
 }
 
@@ -197,7 +197,8 @@ void remove_player( int socket) {
         players[j]=players[j+1];
     }
     amount_players--;
-    sprintf(mess.payload,"The player %s has been successfully removed from the game\n", namePl);
+    printf("The player %s has been successfully removed from the game \n");
+    sprintf(mess.payload,"The player %s has left  the game\n", namePl);
     mess.code=C_INFO;
     send_message_everybody(mess);
 
