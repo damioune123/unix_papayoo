@@ -10,6 +10,7 @@
 #include<fcntl.h>
 #include <sys/file.h>
 #include "message.h"
+#include <signal.h>
 #define TRUE	1
 #define FALSE	0
 #define HOST_IP "127.0.0.1"
