@@ -1,6 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre, MEUR Damien
+*  AUTHORS : MANIET Alexandre (amaniet15) , MEUR Damien (dmeur15)
+*  This fille content the header and constant necessary for the client program
 *
 */
 

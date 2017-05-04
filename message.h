@@ -1,6 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre, MEUR Damien
+*  AUTHORS : MANIET Alexandre (amaniet2015), MEUR Damien (dmeur15)
+*  This file contains the structure and constants needed to communicate between the server and client through sockets.
 *
 */
 #ifndef MESSAGE_H

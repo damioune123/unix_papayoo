@@ -1,6 +1,6 @@
 
 # AUTHORS : MANIET Alexandre, MEUR Damien
-
+# amaniet2015, dmeur15
 ########################################
 # Makefile  : v0.1
 #######################################

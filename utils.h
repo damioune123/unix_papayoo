@@ -1,6 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre, MEUR Damien
+*  AUTHORS : MANIET Alexandre (amaniet2015), MEUR Damien (dmeur2015)
+*  This file contains all the necessary constants and functions declarations needed by both client and server programs
 *
 */
 #ifndef UTIL_H

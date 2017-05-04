@@ -1,6 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre, MEUR Damien
+*  AUTHORS : MANIET Alexandre (amaniet15) , MEUR Damien (dmeur15)
+*  This file contains all the necesary structures, functions declarations and constant needed by the server program.
 *
 */
 #ifndef SERVER_H
@@ -28,6 +29,7 @@ void send_message_everybody(message);//send message to all players
 void clear_lobby();//clear the lobby
 void add_client(int, struct sockaddr_in*); //adds a client to the fdset
 void add_player(int, message); //confirm connection and inform client
+int all_players_registered();
 void remove_player(int); //removes a player from the game
 void start_game(); //starts the game
 void deal_cards(); //shuffles the deck and deals cards to all players

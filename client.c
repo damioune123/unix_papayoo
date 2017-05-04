@@ -1,6 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre, MEUR Damien
+*  AUTHORS : MANIET Alexandre (amaniet2015) , MEUR Damien (dmeur15)
+*  This file contains the source code needed for the client side program.
 *
 */
 

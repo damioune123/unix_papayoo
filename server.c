@@ -1,6 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre, MEUR Damien
+*  AUTHORS : MANIET Alexandre (amaniet2015), MEUR Damien (dmeur15)
+*  This file contains the source code of the server side of the program.
 *
 */
 #include "server.h"
@@ -85,7 +86,7 @@ int main(int argc , char *argv[])
                 }
             }
             if(game_running){
-                //TO DO
+                printf("THE GAME IS RUNNING \n"); //ONLY FOR DEBUG
             }
         }
         if(argc==3)
@@ -143,6 +144,8 @@ void add_player(int socket, message mesRecv) {
             else
                 printf("Player number %i : is not registered yet\n", i);
         }
+        if(amount_players >=2 && all_players_registered())
+            start_game();
 }
 int find_player_id_by_socket(int socket){
     for(int j = 0; j < MAX_PLAYERS; j++){
@@ -212,8 +215,8 @@ int all_players_registered(){
 
 
 void remove_player( int socket) {
-    int idx_player = find_player_id_by_socket(socket);
     char namePl[255];
+    int idx_player = find_player_id_by_socket(socket);
     if(idx_player ==-1){
         fprintf(stderr, "The server couldn't bind the socket with a player\n");
         return;
@@ -247,33 +250,33 @@ void send_message_everybody(message msg){
     }
 }
 void alarm_handler(int signum) {
-    if (signum == SIGALRM) {
-        mess.code=C_INFO;
-        if (amount_players < 2) {
-            sprintf(mess.payload,"The game hasn't started because  the  %i countdown has expired. Amount of players in the lobby : %i\n. Countdown restarted\n", COUNTDOWN,  amount_players);
-            alarm(COUNTDOWN);
-            send_message_everybody(mess);
-        }
-        else if(all_players_registered()==FALSE){
-            sprintf(mess.payload,"The game hasn't started because the required amount of players is full but some of them haven't registerd yet\n Countdown restarted\n");
-            alarm(COUNTDOWN);
-            send_message_everybody(mess);
-        }
-        else {
-            printf("A game is starting // AMOUNT OF PLAYERS %i\n", amount_players);
-            sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n", amount_players);
-            send_message_everybody(mess);
-            start_game();
-        }
+    if(game_running)
+        return;
+    mess.code=C_INFO;
+    if (amount_players < 2) {
+        sprintf(mess.payload,"The game hasn't started because  the  %i s countdown has expired. Amount of players in the lobby : %i\n. Countdown restarted\n", COUNTDOWN,  amount_players);
+        alarm(COUNTDOWN);
+        send_message_everybody(mess);
+    }
+    else if(all_players_registered()==FALSE){
+        sprintf(mess.payload,"The game hasn't started because the required amount of players is full but some of them haven't registerd yet\n Countdown restarted\n");
+        alarm(COUNTDOWN);
+        send_message_everybody(mess);
+    }
+    else {
+        start_game();
     }
 }
 void interrupt_handler(int signum) {
-     shutdown_server();
-     shutdown_socket(server_socket);
+    shutdown_socket(server_socket);
+    shutdown_server();
 }
 void start_game() {
-    start_round();
+    printf("A game is starting with %i players.\n", amount_players);
+    sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n May the best win !\n", amount_players);
+    send_message_everybody(mess);
     game_running = TRUE;
+    start_round();
 }
 
 void start_round() {
