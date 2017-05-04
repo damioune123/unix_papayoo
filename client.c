@@ -19,6 +19,7 @@ int main(int argc , char *argv[])
                 printf("%s", mRecv.payload);
 	signup(&socket);
 	while(TRUE){
+            sleep(1);//to prevent cpu overheat
             if(receive_message( &mRecv, socket)==TRUE)
                 printf("%s", mRecv.payload);
         }
