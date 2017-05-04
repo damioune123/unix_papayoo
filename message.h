@@ -1,3 +1,8 @@
+/**
+*
+*  AUTHORS : MANIET Alexandre, MEUR Damien
+*
+*/
 #ifndef MESSAGE_H
 #define MESSAGE_H
 #define MESSAGE_MAX_LENGTH 2000

@@ -1,3 +1,8 @@
+/**
+*
+*  AUTHORS : MANIET Alexandre, MEUR Damien
+*
+*/
 #include "server.h"
 
 player players[MAX_PLAYERS];

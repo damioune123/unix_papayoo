@@ -1,3 +1,8 @@
+/**
+*
+*  AUTHORS : MANIET Alexandre, MEUR Damien
+*
+*/
 #include "utils.h"
 
 int receive_message(message* msg, int fd) {

@@ -1,3 +1,9 @@
+/**
+*
+*  AUTHORS : MANIET Alexandre, MEUR Damien
+*
+*/
+
 #include "utils.h"
 #ifndef CLIENT_H
 #define CLIENT_H

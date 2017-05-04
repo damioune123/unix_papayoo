@@ -1,6 +1,10 @@
+
+# AUTHORS : MANIET Alexandre, MEUR Damien
+
 ########################################
 # Makefile  : v0.1
 #######################################
+
 
 CFLAGS=-g
 

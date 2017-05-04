@@ -1,3 +1,8 @@
+/**
+*
+*  AUTHORS : MANIET Alexandre, MEUR Damien
+*
+*/
 #ifndef UTIL_H
 #define UTIL_H
 #include <unistd.h>

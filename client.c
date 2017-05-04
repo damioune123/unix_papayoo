@@ -1,3 +1,9 @@
+/**
+*
+*  AUTHORS : MANIET Alexandre, MEUR Damien
+*
+*/
+
 #include "client.h"
 struct message mSent; // Structure used to send messages to the server
 struct message mRecv; // Structure used to receive messages from the server
