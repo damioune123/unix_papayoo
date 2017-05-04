@@ -204,7 +204,7 @@ void clear_lobby() {
 }
 int all_players_registered(){
     for(int i=0; i < amount_players; i++){
-        if(players[i].is_registered==FALSE)
+        if(!players[i].is_registered)
             return FALSE;
     }
     return TRUE;
@@ -220,7 +220,7 @@ void remove_player( int socket) {
     }
     shutdown_socket(players[idx_player].socket);
     players[idx_player].socket=0;
-    if(players[idx_player].is_registered == TRUE)
+    if(players[idx_player].is_registered)
         strcpy(namePl, players[idx_player].name);
     else
         strcpy(namePl, "unregistered (Anonymous)");

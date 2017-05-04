@@ -16,15 +16,13 @@ int main(int argc , char *argv[])
 	int socket; // The socket used to communicate with the server (file descriptor)
 	if(argc!=3){
 		fprintf(stderr, "Usage %s ip port\n", argv[0]); // Usage check
-		exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 	strcpy(server_ip, argv[1]);
 	port = atoi(argv[2]);
-	connect_to_server(&socket, &server_addr);
-        if(receive_message( &mRecv, socket)==TRUE)
-                printf("%s", mRecv.payload);
-	signup(&socket);
-	while(TRUE){
+        try_to_connect(&socket, &server_addr);
+        signup(&socket);
+        while(TRUE){
             usleep(50);//to prevent cpu overheat
             if(receive_message( &mRecv, socket)==TRUE){
                 printf("%s", mRecv.payload);
@@ -32,14 +30,12 @@ int main(int argc , char *argv[])
                     case C_GAME_CANCELLED:
                         shutdown_socket(socket);
                         socket=0;
-	                connect_to_server(&socket, &server_addr);
-                         if(receive_message( &mRecv, socket)==TRUE)
-                             printf("%s", mRecv.payload);
+                        try_to_connect(&socket, &server_addr);
                         signup(&socket);
                         break;
                     case C_SERVER_SHUT_DOWN:
-                        exit(EXIT_FAILURE);
-                        break;
+                        shutdown_socket(socket);
+                        return EXIT_FAILURE;
                     default:
                         continue;
                 }
@@ -48,7 +44,18 @@ int main(int argc , char *argv[])
         }
 	return EXIT_SUCCESS;
 }
-
+void try_to_connect(int *socket, struct sockaddr_in *server_addr){
+    while(TRUE){
+        connect_to_server(socket, server_addr);
+        if(receive_message( &mRecv, *socket)){
+            printf("%s", mRecv.payload);
+            if(mRecv.code ==C_OK)
+                break;
+            printf("Another try in %i seconds\n", TIME_TRY_CONNECT);
+        }
+        sleep(TIME_TRY_CONNECT);
+    }
+}
 void signup(int * client_socket){
 	int inscriptionOK=FALSE;
 	char messageS[MESSAGE_MAX_LENGTH];
@@ -65,15 +72,12 @@ void signup(int * client_socket){
 }
 
 void connect_to_server(int *client_socket , struct sockaddr_in *server_addr){
-
 	//Create socket
 	*client_socket = socket(AF_INET , SOCK_STREAM , 0);
 	if (*client_socket == -1)
 	{
 		printf("Could not create socket");
 	}
-	printf("Socket created\n");
-
 	server_addr->sin_addr.s_addr = inet_addr(server_ip);
 	server_addr->sin_family = AF_INET;
 	server_addr->sin_port = htons(port );
