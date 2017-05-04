@@ -13,7 +13,7 @@ int main(int argc , char *argv[])
         struct timeval timeout = {0, 15000};
 	struct sockaddr_in server_addr, client_addr;
         int fdLock = open("./server.lock", O_RDWR);
-        fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+        fct_ptr dispatcher[] = {add_player, remove_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
 
 	if (fdLock == -1) { 
 		perror("Erreur ouverture fichier lock\n");
@@ -71,8 +71,6 @@ int main(int argc , char *argv[])
                     if (FD_ISSET(players[i].socket, &fds)) {
                         if (receive_msg(&mess, players[i].socket)) {
                             dispatcher[mess.code] (players[i].socket, mess);
-                        } else {
-                            remove_player(players, i, FALSE);
                         }
                     }
                 }
@@ -116,6 +114,7 @@ void add_player(int socket, message mesRecv) {
         if(idx_player ==-1){
             mess.code=C_SERVER_ERROR;
             strcpy(mess.payload, M_SERVER_ERROR);
+            fprintf(stderr, "The server couldn't bind the socket with a player\n");
             send_message(mess, socket);
             return;
         }
@@ -189,17 +188,17 @@ void shutdown_socket(int socket) {
 }
 
 void clear_lobby() {
-        //TO DO
-        /*
-	while (players[0].socket > 0) {
-	    remove_player(players, 0, FALSE);
-	}*/
+    for(int i=0; i < amount_players; i++){
+        shutdown_socket(players[i].socket);
+    }
+    amount_players=0;
     printf("Enter clear lobby method \n");
 }
 
 
 void remove_player( int socket, message mesRcv) {
     int idx_player = find_player_id_by_socket(socket);
+    char namePl[255];
     if(idx_player ==-1){
         mess.code=C_SERVER_ERROR;
         strcpy(mess.payload, M_SERVER_ERROR);
@@ -207,8 +206,15 @@ void remove_player( int socket, message mesRcv) {
         fprintf(stderr, "The server couldn't bind the socket with a player\n");
         return;
     }
-    strcpy(players[idx_player].name, mesRecv.payload);
-    printf("Enter remove player method \n");
+    shutdown_socket(players[idx_player].socket);
+    strcpy(namePl, players[idx_player].name);
+    for(int j=idx_player;j< amount_players; j++ ){
+        players[j]=players[j+1];
+    }
+    amount_players--;
+    printf("The player %s has been successfully removed from the game\n", namePl);
+    //BROADCAST THIS MESSAGE TO ALL PLAYERS
+
 }
 
 void send_message(message msg, int socket) {
