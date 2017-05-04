@@ -16,7 +16,11 @@ int main(int argc , char *argv[])
 	port = atoi(argv[2]);
 	connect_to_server(&socket, &server_addr);
 	signup(&socket);
-	while(TRUE){}
+	while(TRUE){
+            if(receive_message(socket, &mRecv)==TRUE)
+                printf("%s\n", mRecv);
+
+        }
 	close(socket);
 	return 0;
 }
@@ -29,19 +33,7 @@ void signup(int * client_socket){
 		scanf("%s" , messageS);
 		strcpy(mSent.payload, messageS);
 		mSent.code=C_ADD_PLAYER;
-		//Send some data
-		if( send(*client_socket , &mSent , sizeof(struct message) , 0) < 0)
-		{
-			printf("Send failed\n");
-			continue;
-		}
-
-		//Receive a reply from the server
-		if( recv(*client_socket , &mRecv , sizeof(struct message) , 0) < 0)
-		{
-			printf("recv failed\n");
-			continue;
-		}
+                send_message( mSent, *client_socket);
 		if(mRecv.code==C_OK)
 			inscriptionOK=TRUE;
 		printf("%s\n", mRecv.payload);
@@ -72,4 +64,3 @@ void connect_to_server(int *client_socket , struct sockaddr_in *server_addr){
 
 
 }
-

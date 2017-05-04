@@ -6,13 +6,13 @@ FILE *fpError;
 int server_running, game_running, amount_players;
 int stock_addr_size = sizeof(struct sockaddr_in);
 message mess;
+struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 int main(int argc , char *argv[])
 {
         int i, max_fd, server_socket, select_res;
         fd_set fds;
-        struct timeval timeout = {0, 15000};
 	struct sockaddr_in server_addr, client_addr;
-        int fdLock = open("./server.lock", O_RDWR);
+        int fdLock = open(SERVER_LOCK, O_RDWR);
         fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
 
 	if (fdLock == -1) { 
@@ -43,6 +43,8 @@ int main(int argc , char *argv[])
 	interrupt.sa_handler = &interrupt_handler;
 	sigaction(SIGALRM, &alarm, NULL);
 	sigaction(SIGINT, &interrupt, NULL);
+	sigaction(SIGTERM, &interrupt, NULL);
+	sigaction(SIGKILL, &interrupt, NULL);
         init_server(&server_socket, &server_addr);
         while(server_running){
             FD_ZERO(&fds);
@@ -69,7 +71,7 @@ int main(int argc , char *argv[])
                 }
                 for (i = 0; i < amount_players; i++) {
                     if (FD_ISSET(players[i].socket, &fds)) {
-                        if (receive_msg(&mess, players[i].socket)) {
+                        if (receive_message(&mess, players[i].socket)) {
                             dispatcher[mess.code] (players[i].socket, mess);
                         }
                         else{
@@ -162,19 +164,7 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr) {
 	listen(*server_socket , MAX_PLAYERS);
 }
 
-int receive_msg(message* msg, int fd) {
-	int bytes_received;
-	if ((bytes_received = recv(fd, msg, sizeof( message), 0)) <= 0) {
-		if (bytes_received == 0) {
-			fprintf(stderr, "Client disconnected.\n");
-		}
-		else {
-			perror("Could not receive message");
-		}
-		return FALSE;
-	}
-	return TRUE;
-}
+
 
 void shutdown_server() {
 	printf("server shutting down ..\n");
@@ -182,13 +172,7 @@ void shutdown_server() {
         server_running = FALSE;
 }
 
-void shutdown_socket(int socket) {
-	printf("Shutting down socket number %d\n", socket);
-	if (close(socket) < 0) {
-		perror("Socket shutdown");
-		exit(EXIT_FAILURE);
-	}
-}
+
 
 void clear_lobby() {
     for(int i=0; i < amount_players; i++){
@@ -213,14 +197,16 @@ void remove_player( int socket) {
         players[j]=players[j+1];
     }
     amount_players--;
-    printf("The player %s has been successfully removed from the game\n", namePl);
-    //BROADCAST THIS MESSAGE TO ALL PLAYERS
+    sprintf(mess.payload,"The player %s has been successfully removed from the game\n", namePl);
+    mess.code=C_INFO;
+    send_message_everybody(mess);
 
 }
 
-void send_message(message msg, int socket) {
-    if (send(socket, &msg, sizeof(struct message), 0) == -1) {
-        perror("Failed to send a mesesage to the socket");
+
+void send_message_everybody(message msg){
+    for(int i=0; i < amount_players; i++){
+        send_message(msg, players[i].socket);
     }
 }
 void alarm_handler(int signum) {
@@ -250,4 +236,5 @@ void start_round() {
 void deal_cards() {
     //TO DO
 }
+
 

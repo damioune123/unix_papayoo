@@ -1,4 +1,6 @@
 #include "utils.h"
+#ifndef CLIENT_H
+#define CLIENT_H
 void connect_to_server(int*, struct sockaddr_in *);
 void signup(int *);
-void hd1(int, siginfo_t, void *);
+#endif
