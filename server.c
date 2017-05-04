@@ -100,22 +100,36 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 			send_message(mess, new_cl_socket);
 
 		} else {
+                        players[amount_players++].socket = new_cl_socket;
                         mess.code=C_OK;
-                        strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
-	                send_message(mess, socket);
+                        strcpy(mess.payload, M_GREET_CLIENT);
+	                send_message(mess,new_cl_socket);
 		}
 	}
 }
 
-void add_player(int socket) {
-        //TO DO / BIZNESS ATTRIBUTE SET (CARDS, ...)
-        printf("Debug add player: socket :  %i & name %s\n", players[amount_players].socket, players[amount_players].name);
-        players[amount_players++].socket = socket;
-        printf("Debug add player: socket :  %i & name %s\n", players[amount_players].socket, players[amount_players].name);
+void add_player(int socket, message mesRecv) {
+        int idx_player = find_player_id_by_socket(socket);
+        if(idx_player ==-1){
+            mess.code=C_SERVER_ERROR;
+            strcpy(mess.payload, M_SERVER_ERROR);
+            send_message(mess, socket);
+            return;
+        }
+        strcpy(players[idx_player].name, mesRecv.payload);
+        mess.code=C_OK;
+        strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
 	if (amount_players == 1) {
-		//first client, set an alarm for 30 seconds
 		alarm(COUNTDOWN);
 	}
+        send_message(mess, socket);
+}
+int find_player_id_by_socket(int socket){
+    for(int j = 0; j < MAX_PLAYERS; j++){
+        if(players[j].socket == socket)
+                return j;
+    }
+    return -1;
 }
 
 void init_server(int *server_socket, struct sockaddr_in *server_addr) {
