@@ -23,7 +23,6 @@ int main(int argc , char *argv[])
             if(receive_message( &mRecv, socket)==TRUE)
                 printf("%s", mRecv.payload);
         }
-	shutdown_socket(socket);
 	return 0;
 }
 
