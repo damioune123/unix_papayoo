@@ -19,7 +19,6 @@ void send_message(message msg, int socket) {
     }
 }
 void shutdown_socket(int socket) {
-	printf("Shutting down socket number %d\n", socket);
 	if (close(socket) < 0) {
 		perror("Socket shutdown");
 		exit(EXIT_FAILURE);

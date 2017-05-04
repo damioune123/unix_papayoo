@@ -19,11 +19,28 @@ int main(int argc , char *argv[])
                 printf("%s", mRecv.payload);
 	signup(&socket);
 	while(TRUE){
-            sleep(1);//to prevent cpu overheat
-            if(receive_message( &mRecv, socket)==TRUE)
+            usleep(50);//to prevent cpu overheat
+            if(receive_message( &mRecv, socket)==TRUE){
                 printf("%s", mRecv.payload);
+                switch (mRecv.code){
+                    case C_GAME_CANCELLED:
+                        shutdown_socket(socket);
+                        socket=0;
+	                connect_to_server(&socket, &server_addr);
+                         if(receive_message( &mRecv, socket)==TRUE)
+                             printf("%s", mRecv.payload);
+                        signup(&socket);
+                        break;
+                    case C_SERVER_SHUT_DOWN:
+                        exit(EXIT_FAILURE);
+                        break;
+                    default:
+                        continue;
+                }
+            }
+
         }
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 void signup(int * client_socket){

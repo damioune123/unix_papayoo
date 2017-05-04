@@ -11,6 +11,8 @@ typedef struct message {
 #define C_REFUSE 1
 #define C_SERVER_ERROR 2
 #define C_INFO 3
+#define C_GAME_CANCELLED 4
+#define C_SERVER_SHUT_DOWN 5
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"
 #define M_CONN_REFUSE "Sorry the connection was refused by the server\n"

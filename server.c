@@ -3,13 +3,13 @@
 player players[MAX_PLAYERS];
 int port;
 FILE *fpError;
-int server_running, game_running, amount_players;
+int server_running, game_running, amount_players, server_socket;
 int stock_addr_size = sizeof(struct sockaddr_in);
 message mess;
 struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 int main(int argc , char *argv[])
 {
-        int i, max_fd, server_socket, select_res;
+        int i, max_fd, select_res;
         fd_set fds;
 	struct sockaddr_in server_addr, client_addr;
         int fdLock = open(SERVER_LOCK, O_RDWR);
@@ -30,9 +30,7 @@ int main(int argc , char *argv[])
         if(argc==3)
             fpError =freopen(argv[2], "a", stderr);
         port=atoi(argv[1]);
-        for( i=0; i < MAX_PLAYERS; i++){
-            players[i].socket=0;
-        }
+        reset_players();
         amount_players=0;
         server_running=TRUE;
         game_running=FALSE;
@@ -47,6 +45,7 @@ int main(int argc , char *argv[])
 	sigaction(SIGKILL, &interrupt, NULL);
         init_server(&server_socket, &server_addr);
         while(server_running){
+            usleep(50);//to prevent cpu overheat
             FD_ZERO(&fds);
             FD_SET(server_socket, &fds);
             max_fd = server_socket + 1;
@@ -86,7 +85,10 @@ int main(int argc , char *argv[])
         }
         if(argc==3)
             fclose(fpError);
+        if(close(fdLock)==-1)
+            perror("Error closing lock file\n");
         shutdown_socket(server_socket);
+        shutdown_server();
 	return EXIT_SUCCESS;
 }
 
@@ -105,11 +107,13 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 		} else {
                         printf("A client has connected\n");
                         players[amount_players++].socket = new_cl_socket;
+                        if (amount_players == 1) 
+                            alarm(COUNTDOWN);
                         mess.code=C_OK;
                         strcpy(mess.payload, M_GREET_CLIENT);
-	                send_message(mess,new_cl_socket);
-		}
-	}
+                        send_message(mess,new_cl_socket);
+                }
+        }
 }
 
 void add_player(int socket, message mesRecv) {
@@ -121,14 +125,19 @@ void add_player(int socket, message mesRecv) {
             send_message(mess, socket);
             return;
         }
+        players[idx_player].is_registered=TRUE;
         strcpy(players[idx_player].name, mesRecv.payload);
         mess.code=C_OK;
         strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
-	if (amount_players == 1) {
-		alarm(COUNTDOWN);
-	}
         send_message(mess, socket);
         printf("Player %s has joined the lobby\n", players[idx_player].name);
+        printf("Current players :\n");
+        for(int i =0; i < amount_players ; i++){
+            if(players[i].is_registered)
+                printf("Player number %i : %s is registered \n",i, players[i].name);
+            else
+                printf("Player number %i : is not registered yet\n", i);
+        }
 }
 int find_player_id_by_socket(int socket){
     for(int j = 0; j < MAX_PLAYERS; j++){
@@ -144,9 +153,6 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr) {
 		perror("Error creating the socket");
 		exit(EXIT_FAILURE);
 	}
-
-	printf("Socket created\n");
-
 	//Prepare the sockaddr_in structure
         server_addr->sin_family = AF_INET;
 	server_addr->sin_addr.s_addr = INADDR_ANY;
@@ -160,12 +166,23 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr) {
 		exit(EXIT_FAILURE);
 	}
         //Listen
-	listen(*server_socket , MAX_PLAYERS);
+        listen(*server_socket , MAX_PLAYERS);
+        printf("Socket created and binded on port %i\n", port);
+}
+void reset_players(){
+        for(int  i=0; i < MAX_PLAYERS; i++){
+            players[i].socket=0;
+            players[i].name[0] = '\0';
+            players[i].is_registered=FALSE;
+        }
+        amount_players=0;
 }
 
 
-
 void shutdown_server() {
+        sprintf(mess.payload,"The server has shut down\n");
+        mess.code=C_SERVER_SHUT_DOWN;
+        send_message_everybody(mess);
 	printf("server shutting down ..\n");
 	clear_lobby();
         server_running = FALSE;
@@ -177,8 +194,15 @@ void clear_lobby() {
     for(int i=0; i < amount_players; i++){
         shutdown_socket(players[i].socket);
     }
-    amount_players=0;
-    printf("Enter clear lobby method \n");
+    reset_players();
+    game_running=FALSE;
+}
+int all_players_registered(){
+    for(int i=0; i < amount_players; i++){
+        if(players[i].is_registered==FALSE)
+            return FALSE;
+    }
+    return TRUE;
 }
 
 
@@ -191,16 +215,25 @@ void remove_player( int socket) {
     }
     shutdown_socket(players[idx_player].socket);
     players[idx_player].socket=0;
-    strcpy(namePl, players[idx_player].name);
+    if(players[idx_player].is_registered == TRUE)
+        strcpy(namePl, players[idx_player].name);
+    else
+        strcpy(namePl, "unregistered (Anonymous)");
+    players[idx_player].is_registered = FALSE;
     for(int j=idx_player;j< amount_players; j++ ){
         players[j]=players[j+1];
     }
     amount_players--;
-    printf("The player %s has been successfully removed from the game \n", namePl);
+    printf("Player %s has been successfully removed from the game \n", namePl);
     sprintf(mess.payload,"The player %s has left  the game\n", namePl);
     mess.code=C_INFO;
     send_message_everybody(mess);
-
+    if(game_running){
+        sprintf(mess.payload,"The game has been stopped due to a client disconnection\n", namePl);
+        mess.code=C_GAME_CANCELLED;
+        send_message_everybody(mess);
+        clear_lobby();
+    }
 }
 
 void send_message_everybody(message msg){
@@ -210,17 +243,28 @@ void send_message_everybody(message msg){
 }
 void alarm_handler(int signum) {
     if (signum == SIGALRM) {
+        mess.code=C_INFO;
         if (amount_players < 2) {
-            clear_lobby();
-        } else {
+            sprintf(mess.payload,"The game hasn't started because  the  %i countdown has expired. Amount of players in the lobby : %i\n. Countdown restarted\n", COUNTDOWN,  amount_players);
+            alarm(COUNTDOWN);
+            send_message_everybody(mess);
+        }
+        else if(all_players_registered()==FALSE){
+            sprintf(mess.payload,"The game hasn't started because the required amount of players is full but some of them haven't registerd yet\n Countdown restarted\n");
+            alarm(COUNTDOWN);
+            send_message_everybody(mess);
+        }
+        else {
+            printf("A game is starting // AMOUNT OF PLAYERS %i\n", amount_players);
+            sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n", amount_players);
+            send_message_everybody(mess);
             start_game();
         }
     }
 }
 void interrupt_handler(int signum) {
-    if (signum == SIGINT) {
-        shutdown_server();
-    }
+     shutdown_server();
+     shutdown_socket(server_socket);
 }
 void start_game() {
     start_round();

@@ -4,22 +4,23 @@
 
 #define MIN_PLAYERS 2
 #define MAX_PLAYERS 4
-#define COUNTDOWN 30 
+#define COUNTDOWN 10 
 #define SERVER_LOCK "./server.lock"
 typedef void (*fct_ptr)( );
 typedef struct player {
 	int socket;
-        struct sockaddr_in client_addr;
+        int is_registered;
 	char name[255];
 } player;
 
 int find_player_id_by_socket(int);//return -1 if no player found
-void init_server(int *, struct sockaddr_in *);
+void init_server(int *, struct sockaddr_in *);//initialize the server 
+void reset_players();//reset the value of all the players
 void alarm_handler(int); //handles alarm timeouts
 void interrupt_handler(int); //shuts down the server when a SIGINT, SIGKILL OR SIGTERM  occurs
 void shutdown_server(); //halts the server
-void send_message_everybody(message);
-void clear_lobby();
+void send_message_everybody(message);//send message to all players
+void clear_lobby();//clear the lobby
 void add_client(int, struct sockaddr_in*); //adds a client to the fdset
 void add_player(int, message); //confirm connection and inform client
 void remove_player(int); //removes a player from the game
