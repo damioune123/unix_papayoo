@@ -80,9 +80,6 @@ int main(int argc , char *argv[])
                     }
                 }
             }
-            for(i =0 ; i < MAX_PLAYERS; i++){
-                printf("Joueur %i / name %s \n", i, players[i].name);
-            }
             if(game_running){
                 //TO DO
             }
@@ -106,6 +103,7 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 			send_message(mess, new_cl_socket);
 
 		} else {
+                        printf("A client has connected\n");
                         players[amount_players++].socket = new_cl_socket;
                         mess.code=C_OK;
                         strcpy(mess.payload, M_GREET_CLIENT);
@@ -130,6 +128,7 @@ void add_player(int socket, message mesRecv) {
 		alarm(COUNTDOWN);
 	}
         send_message(mess, socket);
+        printf("Player %s has joined the lobby\n", players[idx_player].name);
 }
 int find_player_id_by_socket(int socket){
     for(int j = 0; j < MAX_PLAYERS; j++){
@@ -197,13 +196,12 @@ void remove_player( int socket) {
         players[j]=players[j+1];
     }
     amount_players--;
-    printf("The player %s has been successfully removed from the game \n");
+    printf("The player %s has been successfully removed from the game \n", namePl);
     sprintf(mess.payload,"The player %s has left  the game\n", namePl);
     mess.code=C_INFO;
     send_message_everybody(mess);
 
 }
-
 
 void send_message_everybody(message msg){
     for(int i=0; i < amount_players; i++){
