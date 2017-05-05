@@ -22,6 +22,7 @@ typedef struct player {
 int find_player_id_by_socket(int);//return -1 if no player found
 void init_server(int *, struct sockaddr_in *);//initialize the server 
 void reset_players();//reset the value of all the players
+void reset_player(); //reset the value of a particuliar player
 void alarm_handler(int); //handles alarm timeouts
 void interrupt_handler(int); //shuts down the server when a SIGINT, SIGKILL OR SIGTERM  occurs
 void shutdown_server(); //halts the server

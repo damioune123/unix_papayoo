@@ -179,13 +179,15 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr) {
 }
 void reset_players(){
         for(int  i=0; i < MAX_PLAYERS; i++){
-            players[i].socket=0;
-            players[i].name[0] = '\0';
-            players[i].is_registered=FALSE;
+            reset_player(players[i]);
         }
         amount_players=0;
 }
-
+void reset_player(player pl){
+    pl.socket=0;
+    pl.name[0]='\0';
+    pl.is_registered=FALSE;
+}
 
 void shutdown_server() {
         sprintf(mess.payload,"The server has shut down\n");
@@ -227,7 +229,7 @@ void remove_player( int socket) {
         strcpy(namePl, players[idx_player].name);
     else
         strcpy(namePl, "unregistered (Anonymous)");
-    players[idx_player].is_registered = FALSE;
+    reset_player(players[idx_player]);
     for(int j=idx_player;j< amount_players; j++ ){
         players[j]=players[j+1];
     }
