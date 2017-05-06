@@ -1,7 +1,7 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre (amaniet2015), MEUR Damien (dmeur2015)
-*  This file contains all the necessary constants and functions declarations needed by both client and server programs
+*  AUTHORS : MANIET Alexandre (amaniet2015)(serie 2), MEUR Damien (dmeur2015)(serie 2)
+*  This file contains all the miscelleneous constants and imports needed by both client and server programs
 *
 */
 #ifndef UTIL_H
@@ -23,7 +23,4 @@
 #include "message.h"
 #define TRUE	1
 #define FALSE	0
-int receive_message(message *, int);
-void send_message(message, int);
-void shutdown_socket(int);
 #endif

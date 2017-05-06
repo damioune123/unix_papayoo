@@ -8,25 +8,25 @@
 
 CFLAGS=-g
 
-all : server client
+all : serveur joueur
 
 
-server : server.o utils.o
-	cc $(CFLAGS) -o server server.o utils.o
+serveur : serveur.o socket.o
+	cc $(CFLAGS) -o serveur serveur.o socket.o
 
-client : client.o utils.o
-	cc $(CFLAGS) -o client client.o utils.o
+joueur : joueur.o socket.o
+	cc $(CFLAGS) -o joueur joueur.o socket.o
 
-server.o : server.c server.h utils.h 
-	cc $(CFLAGS) -c server.c
+serveur.o : serveur.c serveur.h socket.h utils.h 
+	cc $(CFLAGS) -c serveur.c
 
-client.o : client.c client.h utils.h 
-	cc $(CFLAGS) -c client.c
+joueur.o : joueur.c joueur.h socket.h utils.h 
+	cc $(CFLAGS) -c joueur.c
 
-util.o : utils.c utils.h
-	cc $(CFLAGS) -c utils.c
+socket.o : socket.c socket.h utils.h
+	cc $(CFLAGS) -c socket.c
 clean :
 	rm *.o
-	rm server
-	rm client
+	rm serveur
+	rm joueur
 

@@ -1,6 +1,6 @@
 /**
 *
-*  AUTHORS : MANIET Alexandre (amaniet2015), MEUR Damien (dmeur15)
+*  AUTHORS : MANIET Alexandre (amaniet2015)(serie 2), MEUR Damien (dmeur15)(serie 2)
 *  This file contains the structure and constants needed to communicate between the server and client through sockets.
 *
 */
