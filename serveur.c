@@ -49,7 +49,7 @@ int main(int argc , char *argv[])
 	sigaction(SIGINT, &interrupt, NULL);
 	sigaction(SIGTERM, &interrupt, NULL);
 	sigaction(SIGKILL, &interrupt, NULL);
-        init_server(&server_socket, &server_addr, port);
+        init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
         while(server_running){
             usleep(50);//to prevent cpu overheat
             FD_ZERO(&fds);

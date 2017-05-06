@@ -6,7 +6,7 @@
 */
 
 #include "socket.h"
-void init_server(int *server_socket, struct sockaddr_in *server_addr, int port) {
+void init_server(int *server_socket, struct sockaddr_in *server_addr, int port, int max_pending_connections) {
 
 	if ((*server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("Error creating the socket");
@@ -25,7 +25,7 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr, int port) 
 		exit(EXIT_FAILURE);
 	}
         //Listen
-        listen(*server_socket , 10);
+        listen(*server_socket , max_pending_connections);
         printf("Socket created and binded on port %i\n", port);
 }
 
