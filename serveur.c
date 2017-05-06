@@ -15,6 +15,7 @@ message mess;
 struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 int main(int argc , char *argv[])
 {
+        struct sigaction alarm, interrupt;
         int i, max_fd, select_res;
         fd_set fds;
 	struct sockaddr_in server_addr, client_addr;
@@ -40,15 +41,15 @@ int main(int argc , char *argv[])
         amount_players=0;
         server_running=TRUE;
         game_running=FALSE;
-        struct sigaction alarm, interrupt;
-        memset(&alarm, 0, sizeof(alarm));
-	memset(&interrupt, 0, sizeof(interrupt));
 	alarm.sa_handler = &alarm_handler;
 	interrupt.sa_handler = &interrupt_handler;
+        interrupt.sa_flags=0;
+        sigemptyset(&interrupt.sa_mask);
+        sigaddset(&interrupt.sa_mask, SIGALRM);//prevents alarm to cancel a shutdown operation
 	sigaction(SIGALRM, &alarm, NULL);
 	sigaction(SIGINT, &interrupt, NULL);
 	sigaction(SIGTERM, &interrupt, NULL);
-	sigaction(SIGKILL, &interrupt, NULL);
+	sigaction(SIGHUP, &interrupt, NULL);
         init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
         while(server_running){
             usleep(50);//to prevent cpu overheat
@@ -91,8 +92,10 @@ int main(int argc , char *argv[])
         }
         if(argc==3)
             fclose(fpError);
-        if(close(fdLock)==-1)
+        if(close(fdLock)==-1){
             perror("Error closing lock file\n");
+            return EXIT_FAILURE;
+        }
         shutdown_socket(server_socket);
         shutdown_server();
 	return EXIT_SUCCESS;
@@ -245,6 +248,20 @@ void alarm_handler(int signum) {
     }
 }
 void interrupt_handler(int signum) {
+    switch(signum){
+        case SIGINT:
+            printf("SIGINT detected, shutting down server ...\n");
+            break;
+        case SIGTERM:
+            printf("SIGTERM detected, shutting down server ...\n");
+            break;
+        case SIGHUP:
+            printf("SIGHUP detected, shutting down server ...\n");
+            break;
+        default:
+            fprintf(stderr, "The signal number %i was detected but no routine was found to handle it ..\n");
+            break;
+    }
     shutdown_socket(server_socket);
     shutdown_server();
 }
