@@ -49,7 +49,7 @@ int main(int argc , char *argv[])
 	sigaction(SIGALRM, &alarm, NULL);
 	sigaction(SIGINT, &interrupt, NULL);
 	sigaction(SIGTERM, &interrupt, NULL);
-	sigaction(SIGHUP, &interrupt, NULL);
+	sigaction(SIGQUIT, &interrupt, NULL);
         init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
         while(server_running){
             usleep(50);//to prevent cpu overheat
@@ -107,7 +107,7 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 		perror("Connection error");
 		exit(EXIT_FAILURE);
 	} else {
-		if (game_running || amount_players == MAX_PLAYERS) {
+		if (game_running || amount_players == MAX_PLAYERS ) {
                         mess.code=C_REFUSE;
                         strcpy(mess.payload,M_CONN_REFUSE);
 			send_message(mess, new_cl_socket);
@@ -161,14 +161,14 @@ int find_player_id_by_socket(int socket){
 
 void reset_players(){
         for(int  i=0; i < MAX_PLAYERS; i++){
-            reset_player(players[i]);
+            reset_player(&players[i]);
         }
         amount_players=0;
 }
-void reset_player(player pl){
-    pl.socket=0;
-    pl.name[0]='\0';
-    pl.is_registered=FALSE;
+void reset_player(player *pl){
+    pl->socket=0;
+    pl->name[0]='\0';
+    pl->is_registered=FALSE;
 }
 
 void shutdown_server() {
@@ -211,7 +211,7 @@ void remove_player( int socket) {
         strcpy(namePl, players[idx_player].name);
     else
         strcpy(namePl, "unregistered (Anonymous)");
-    reset_player(players[idx_player]);
+    reset_player(&players[idx_player]);
     for(int j=idx_player;j< amount_players; j++ ){
         players[j]=players[j+1];
     }
@@ -250,16 +250,16 @@ void alarm_handler(int signum) {
 void interrupt_handler(int signum) {
     switch(signum){
         case SIGINT:
-            printf("SIGINT detected, shutting down server ...\n");
+            printf("SIGINT detected by the server\n");
             break;
         case SIGTERM:
-            printf("SIGTERM detected, shutting down server ...\n");
+            printf("SIGTERM detected by the server\n");
             break;
-        case SIGHUP:
-            printf("SIGHUP detected, shutting down server ...\n");
+        case SIGQUIT:
+            printf("SIGQUIT detected by the server\n");
             break;
         default:
-            fprintf(stderr, "The signal number %i was detected but no routine was found to handle it ..\n");
+            fprintf(stderr, "The signal number %i was detected but no routine was found to handle it ..\n", signum);
             break;
     }
     shutdown_socket(server_socket);
