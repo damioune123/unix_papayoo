@@ -14,6 +14,10 @@ int socketC; // The socket used to communicate with the server (file descriptor)
 
 int main(int argc , char *argv[])
 {
+        //test shared memory
+        char *s;
+        s=locate_segment();
+        printf("DEBUG SHARED MEMORY %s\n", s);
         struct sigaction interrupt;
         memset(&interrupt, 0, sizeof(interrupt));
         interrupt.sa_handler = &interrupt_handler;

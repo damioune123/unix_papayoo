@@ -15,6 +15,14 @@ message mess;
 struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 int main(int argc , char *argv[])
 {
+        //test shared memory    
+        char* s;
+        s= create_segment();
+        for(char c='a'; c <= 'z'; c++){
+            *s++=c;
+        }
+
+
         struct sigaction alarm, interrupt;
         int i, max_fd, select_res;
         fd_set fds;
@@ -52,7 +60,7 @@ int main(int argc , char *argv[])
 	sigaction(SIGQUIT, &interrupt, NULL);
         init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
         while(server_running){
-            usleep(50);//to prevent cpu overheat
+            usleep(50); //top prevent cpu overheat
             FD_ZERO(&fds);
             FD_SET(server_socket, &fds);
             max_fd = server_socket + 1;
