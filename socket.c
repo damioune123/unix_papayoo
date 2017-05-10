@@ -77,4 +77,3 @@ void shutdown_socket(int socket) {
 		exit(EXIT_FAILURE);
 	}
 }
-
