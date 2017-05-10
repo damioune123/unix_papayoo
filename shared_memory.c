@@ -2,19 +2,20 @@
 key_t key = 5678;
 
 int semaphore;
-semaphore mutex = 1;			// controle d'acces a "rc"
-semaphore mem = 1;			// controle d'acces a la memoire partagee
-int rc = 0;				// nombre de processus lisant ou voulant lire
+semaphore mutex = 1;			// access control to a rc
+semaphore mem = 1;			// access control to shared memory
+int rc = 0;				// number of processes wanting to read
 
 // TODO add down and up functions
 // returns a field from the shared memory
+// TODO display extracted information instead of returning it?
 void* s_read(int code){
 	void* ret;
 	down(&mutex);			// get exclusive access to rc
-	rc = rc + 1;			// un lecteur de plus
-	if(rc == 1) down(&mem);		// si c'est le premier lecteur...
-	up(&mutex);			// liberer l'acces exclusif a rc
-	// TODO lire données, operation critique
+	rc = rc + 1;			// one more reader
+	if(rc == 1) down(&mem);		// if first reader...
+	up(&mutex);			// release exclusive access to rc
+	// TODO read data, critical operation
 	switch(code){
 		case CODE_READ_NAMES:
 			ret = locate_segment().names;	
@@ -29,18 +30,18 @@ void* s_read(int code){
 			fprintf(stderr, "Incorrect read operation code\n");
 			break;
 	}
-	down(&mutex);			// obtenir l'acces exclusif a rc
-	rc = rc - 1			// un lecteur de moins
-		if(rc == 0) up(&mem);		// si c'est le dernier lecteur
-	up(&mutxe);			// liberer l'acces exclusif a rc
+	down(&mutex);			// get exclusive access to rc
+	rc = rc - 1			// one less reader
+		if(rc == 0) up(&mem);	// if last reader
+	up(&mutxe);			// release exclusive access to rc
 	return ret; // return the extracted data
 }
 
 void s_write(void* s_mem){
-	// TODO créer données, operation non critique
-	down(&mem);			// obtenir acces exclusif
-	// TODO ecrire données, operation critique
-	up(&mem);			// liberer acces exclusif
+	// TODO create data, non critical operation
+	down(&mem);			// get exclusive access
+	// TODO write data, critical operation
+	up(&mem);			// release exclusive access
 }
 
 
