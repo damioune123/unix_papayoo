@@ -197,11 +197,13 @@ void reset_player(player *pl){
 }
 
 void shutdown_server() {
+        
         sprintf(mess.payload,"The server has shut down\n");
         mess.code=C_SERVER_SHUT_DOWN;
         send_message_everybody(mess);
 	printf("server shutting down ..\n");
 	clear_lobby();
+        kill_ipcs();
         server_running = FALSE;
 }
 

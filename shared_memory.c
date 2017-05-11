@@ -4,6 +4,8 @@ s_mem *board;
 struct sembuf sop;
 int sem_id_mutex_mem; // locking shared memory access
 int sem_id_mutex_rc; // locking shared reader count access
+int shmid_mem;
+int shmid_rc;
 int * rc;// amount of readers
 
 void s_read_scores(int **data){
@@ -50,8 +52,6 @@ void s_write_score(int idx, int data){
 
 
 void create_segment(){
-    int shmid_mem;
-    int shmid_rc;
     if ((shmid_mem = shmget(TOKEN_SEG_MEM, sizeof(s_mem), IPC_CREAT | 0666)) < 0) {
         perror("shmget s_mem");
         exit(EXIT_FAILURE);
@@ -74,8 +74,6 @@ void create_segment(){
 
 }
 void locate_segment(){
-    int shmid_mem;
-    int shmid_rc;
     if ((shmid_mem = shmget(TOKEN_SEG_MEM, sizeof(s_mem), 0666)) < 0) {
         perror("shmget s_mem");
         exit(EXIT_FAILURE);
@@ -133,4 +131,10 @@ void up(int semid){
     {	perror("Error up semaphore");
         exit(EXIT_FAILURE);
     }
+}
+void kill_ipcs(){
+    semctl(sem_id_mutex_mem, 0, IPC_RMID, NULL);
+    semctl(sem_id_mutex_rc, 0, IPC_RMID, NULL);
+    shmctl(shmid_mem, IPC_RMID, NULL);
+    shmctl(shmid_rc, IPC_RMID, NULL);
 }

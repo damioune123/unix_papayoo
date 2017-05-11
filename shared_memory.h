@@ -27,4 +27,5 @@ void init_semaphores();
 void locate_semaphores();
 void down(int);
 void up(int);
+void kill_ipcs();
 #endif
