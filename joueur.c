@@ -14,6 +14,8 @@ int socketC; // The socket used to communicate with the server (file descriptor)
 
 int main(int argc , char *argv[])
 {
+        locate_segment();
+        locate_semaphores();
         //test shared memory
         int test[4];
         s_read_scores((int**)&test);

@@ -26,6 +26,7 @@ void s_write_name( int, char* );
 void  create_segment();
 void  locate_segment();
 void init_semaphores();
+void locate_semaphores();
 void down(int);
 void up(int);
 #endif
