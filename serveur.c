@@ -15,26 +15,18 @@ message mess;
 struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 int main(int argc , char *argv[])
 {
-        //test shared memory
-        char* s;
-        s= (char *) create_segment();
-        for(char c='a'; c <= 'z'; c++){
-            *s++=c;
-        }
-
-
         struct sigaction alarm, interrupt;
         int i, max_fd, select_res;
         fd_set fds;
 	struct sockaddr_in server_addr, client_addr;
         int fdLock = open(SERVER_LOCK, O_RDWR);
-        fct_ptr dispatcher[] = {(fct_ptr)add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+        fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
 
-	if (fdLock == -1) {
+	if (fdLock == -1) { 
 		perror("Erreur ouverture fichier lock\n");
 		exit(EXIT_FAILURE);
 	}
-	if (flock(fdLock, LOCK_EX | LOCK_NB) == -1) {
+	if (flock(fdLock, LOCK_EX | LOCK_NB) == -1) { 
 		fprintf(stderr,"Ce daemon ne peut pas etre ouvert plusieurs  fois, une autre instance est en cours\n");
 		exit(EXIT_FAILURE);
 	}
@@ -123,7 +115,7 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 		} else {
                         printf("A client has connected\n");
                         players[amount_players++].socket = new_cl_socket;
-                        if (amount_players == 1)
+                        if (amount_players == 1) 
                             alarm(COUNTDOWN);
                         mess.code=C_OK;
                         strcpy(mess.payload, M_GREET_CLIENT);
@@ -229,7 +221,7 @@ void remove_player( int socket) {
     mess.code=C_INFO;
     send_message_everybody(mess);
     if(game_running){
-        sprintf(mess.payload,"The game has been stopped due to a client disconnection\n");
+        sprintf(mess.payload,"The game has been stopped due to a client disconnection\n", namePl);
         mess.code=C_GAME_CANCELLED;
         send_message_everybody(mess);
         clear_lobby();
@@ -296,3 +288,5 @@ void send_message_everybody(message msg){
         send_message(msg, players[i].socket);
     }
 }
+
+

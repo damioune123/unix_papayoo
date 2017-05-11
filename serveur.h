@@ -10,9 +10,9 @@
 
 #define MIN_PLAYERS 2
 #define MAX_PLAYERS 4
-#define COUNTDOWN 10
+#define COUNTDOWN 10 
 #define SERVER_LOCK "./server.lock"
-typedef void (*fct_ptr)(int, message);
+typedef void (*fct_ptr)( );
 typedef struct player {
 	int socket;
         int is_registered;
