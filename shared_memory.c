@@ -18,7 +18,7 @@ void* s_read(int code){
 	// TODO read data, critical operation
 	switch(code){
 		case CODE_READ_NAMES:
-			ret = locate_segment().names;	
+			ret = locate_segment().names;
 			break;
 		case CODE_READ_SCORES:
 			ret = locate_segment().scores;
@@ -83,4 +83,3 @@ void* locate_segment(){
 	}
 	return shm;
 }
-
