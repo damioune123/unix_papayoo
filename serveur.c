@@ -51,6 +51,21 @@ int main(int argc , char *argv[])
 	sigaction(SIGTERM, &interrupt, NULL);
 	sigaction(SIGQUIT, &interrupt, NULL);
         init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
+        printf("la\n");
+        create_segment();
+        init_semaphores();
+        printf("ici\n");
+        char *test = "YOYOYOYO";
+        char *test2[4];
+        s_write(CODE_WRITE_NAME, 0, test);
+        s_read(CODE_READ_NAMES, 0,(void**)&test2);
+
+        for(int k=0; k < 4; k++){
+            printf("DEBUG READ %s\n",test2[k]);
+        }
+        s_write(CODE_WRITE_SCORE, 0, 15);
+        int test3[4];
+        s_read(CODE_READ_SCORES, 0, (void **)&test3);
         while(server_running){
             usleep(50); //top prevent cpu overheat
             FD_ZERO(&fds);

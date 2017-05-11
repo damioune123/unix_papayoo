@@ -1,8 +1,7 @@
 #include "shared_memory.h"
-key_t key = 5678;
 s_mem *board;
 
-struct sembuf sop;
+struct sembuf sop[1];
 int sem_id_mutex_mem; // locking shared memory access
 int sem_id_mutex_rc; // locking shared reader count access
 int * rc;// amount of readers
@@ -10,7 +9,7 @@ int * rc;// amount of readers
 // TODO add down and up functions
 // returns a field from the shared memory
 // TODO display extracted information instead of returning it?
-void *s_read(int code){
+void s_read(int code, int idx, void **data){
 	void * ret = NULL;
 	down(sem_id_mutex_rc);			// get exclusive access to rc
 	*rc = *rc + 1;			// one more reader
@@ -19,10 +18,10 @@ void *s_read(int code){
 	// TODO read data, critical operation
 	switch(code){
 		case CODE_READ_NAMES:
-			ret = getNames();
+			memcpy((char **)*data, board->names, sizeof(board->names));
 			break;
 		case CODE_READ_SCORES:
-			ret = getScores();
+			memcpy((int *)*data, board->scores, sizeof(board->scores));
 			break;
 		case CODE_READ_CURRENT_CARDS:
 			// TODO complete once card structure has been implemented
@@ -32,49 +31,43 @@ void *s_read(int code){
 			break;
 	}
 	down(sem_id_mutex_rc);			// get exclusive access to rc
-	*rc = *rc - 1			// one less reader
-	if(*rc == 0) up(mem);	// if last reader
+	*rc = *rc - 1;			// one less reader
+	if(*rc == 0) 
+            up(sem_id_mutex_mem);	// if last reader
 	up(sem_id_mutex_rc);			// release exclusive access to rc
-	return ret;
 
 }
 
-void s_write(void* data){
-	// TODO create data, non critical operation
-	down(sem_id_mem);			// get exclusive access
-	// TODO write data, critical operation
-	up(sem_id_mem);			// release exclusive access
+void s_write(int code,int idx, void* data){
+        printf("debug s_write %s\n", data);
+	down(sem_id_mutex_mem);			// get exclusive access
+        switch(code){
+            case CODE_WRITE_NAME :
+                strcpy(board->names[idx],(char *)data);
+                break;
+            case CODE_WRITE_SCORE:
+                board->scores[idx]=(int) data;
+                break;
+            default:
+                fprintf(stderr, "Incorrect write operation code\n");
+                break;
+        }
+	up(sem_id_mutex_mem);			// release exclusive access
+
 }
 
-// ONLY use when mutex to access board memory is down
-// returns a two dimentional table containing the names of all players
-char** getNames(){
-	char[4][255] ret;
-	memcpy(ret, board.names, sizeof(ret));
-	return ret;
-}
-
-// ONLY use when mutex to access rc is down
-// returns a table containing the scores of all players
-int* getScores(){
-	int[4] ret;
-	memcpy(ret, board.scores, sizeof(ret));
-	return ret;
-}
 
 void create_segment(){
 	int shmid_mem;
 	int shmid_rc;
-	if ((shmid_mem = shmget(key, sizeof(s_mem), IPC_CREAT | 0666)) < 0) {
+	if ((shmid_mem = shmget(TOKEN_SEG_MEM, sizeof(s_mem), IPC_CREAT | 0666)) < 0) {
 		perror("shmget s_mem");
 		exit(EXIT_FAILURE);
 	}
-	if ((shmid_rc = shmget(key, sizeof(int), IPC_CREAT | 0666)) < 0) {
+	if ((shmid_rc = shmget(TOKEN_SEG_RC, sizeof(int), IPC_CREAT | 0666)) < 0) {
 		perror("shmget rc");
 		exit(EXIT_FAILURE);
 	}
-
-
 	/*
 	 * Now we attach the segment to our data space.
 	 */
@@ -97,17 +90,29 @@ void init_semaphores(){
 	{	perror("semget");
 		exit(1);
 	}	
+        sop[0].sem_num=0;
+        sop[0].sem_op=1;
+        sop[0].sem_flg=0;
+	if( semop(sem_id_mutex_mem,sop,1) < 0 )
+	{	perror("Error init semaphore");
+		exit(EXIT_FAILURE);
+	}
+	if( semop(sem_id_mutex_rc,sop,1) < 0 )
+	{	perror("Error down semaphore");
+		exit(EXIT_FAILURE);
+	}
+
 }
 void down(int semid){
-	sop.sem_op = -1;
-	if( semop(semid,&sop,1) < 0 )
+	sop[0].sem_op = -1;
+	if( semop(semid,sop,1) < 0 )
 	{	perror("Error down semaphore");
 		exit(EXIT_FAILURE);
 	}
 }
 void up(int semid){
-	sop.sem_op = -1;
-	if( semop(semid,&sop,1) < 0 )
+	sop[0].sem_op = 1;
+	if( semop(semid,sop,1) < 0 )
 	{	perror("Error up semaphore");
 		exit(EXIT_FAILURE);
 	}
