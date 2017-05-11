@@ -88,7 +88,6 @@ void try_to_connect(int *socket, struct sockaddr_in *server_addr){
 
 void interrupt_handler(int signum){
     shutdown_socket(socketC);
-    printf("ici\n");
     exit(EXIT_SUCCESS);
 }
 
