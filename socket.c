@@ -51,7 +51,7 @@ void connect_to_server(int *client_socket , struct sockaddr_in *server_addr, cha
 
 }
 
-
+//test git
 
 int receive_message(message* msg, int fd) {
 	int bytes_received;
