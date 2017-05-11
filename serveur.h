@@ -8,8 +8,6 @@
 #define SERVEUR_H
 #include "socket.h"
 
-#define MIN_PLAYERS 2
-#define MAX_PLAYERS 4
 #define COUNTDOWN 10 
 #define SERVER_LOCK "./server.lock"
 typedef void (*fct_ptr)( );
@@ -34,4 +32,5 @@ void remove_player(int); //removes a player from the game
 void start_game(); //starts the game
 void deal_cards(); //shuffles the deck and deals cards to all players
 void start_round(); //starts a new round
+void init_shared_memory();
 #endif

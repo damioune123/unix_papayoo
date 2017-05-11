@@ -1,16 +1,15 @@
 #ifndef S_MEMORY_H
 #define S_MEMORY_H
-#include <sys/types.h>
-#include<stdlib.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/sem.h>
+#include "utils.h"
+#define MAX_PLAYERS 4
+#define MIN_PLAYERS 2
+#define BUFFER_SIZE 255
 typedef struct s_mem{
-	int scores[4];
-	char names[4][255];
-	// TODO add more fields to the share memory structure
+	int scores[MAX_PLAYERS];
+	char names[MAX_PLAYERS][BUFFER_SIZE];
 } s_mem;
 #define TOKEN_MUT_MEM 137
 #define TOKEN_MUT_RC 138
@@ -21,8 +20,8 @@ void s_read_scores( int **);
 void s_read_names(char **);
 void s_write_score( int, int );
 void s_write_name( int, char* );
-void  create_segment();
-void  locate_segment();
+void create_segment();
+void locate_segment();
 void init_semaphores();
 void locate_semaphores();
 void down(int);

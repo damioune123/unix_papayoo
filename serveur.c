@@ -53,29 +53,6 @@ int main(int argc , char *argv[])
         init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
         create_segment();
         init_semaphores();
-        //test shared memory
-        char *testA = "DAMS";
-        char *testB = "ANTOINE";
-        char *testC = "ALEXANDRE";
-        char *testD = "CHRISTOPHER";
-        char test2[4][255];
-        s_write_name(0,testA);
-        s_write_name(1,testB);
-        s_write_name(2,testC);
-        s_write_name(3,testD);
-        s_read_names((char **)test2);
-        printf("%s\n", test2[0]);
-        printf("%s\n", test2[1]);
-        printf("%s\n", test2[2]);
-        printf("%s\n", test2[3]);
-        s_write_score(0,15);
-        s_write_score(1,16);
-        s_write_score(2,17);
-        s_write_score(3,18);
-        int test3[4];
-        s_read_scores((int **)&test3);
-        printf("%i %i %i %i \n",test3[0], test3[1], test3[2], test3[3]);
-        //end test shared memory
         while(server_running){
             usleep(50); //top prevent cpu overheat
             FD_ZERO(&fds);
@@ -297,6 +274,7 @@ void start_game() {
     sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n May the best win !\n", amount_players);
     send_message_everybody(mess);
     game_running = TRUE;
+    init_shared_memory();
     start_round();
 }
 
@@ -316,4 +294,19 @@ void send_message_everybody(message msg){
     }
 }
 
-
+void init_shared_memory(){
+    int i;
+    for(i=0; i < amount_players ; i++){
+        s_write_score(i,0);
+        s_write_name(i, players[i].name);
+    }
+    //DEBUG
+    /*
+    char names[MAX_PLAYERS][BUFFER_SIZE];
+    int scores[MAX_PLAYERS];
+    s_read_names((char **)names);
+    s_read_scores((int **) scores);
+    for(i =0; i < amount_players; i++){
+        printf("NOM %s // score %i \n", names[i], scores[i]);
+    }*/
+}

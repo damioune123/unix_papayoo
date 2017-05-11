@@ -14,12 +14,6 @@ int socketC; // The socket used to communicate with the server (file descriptor)
 
 int main(int argc , char *argv[])
 {
-        locate_segment();
-        locate_semaphores();
-        //test shared memory
-        int test[4];
-        s_read_scores((int**)&test);
-        printf("%i %i %i %i \n", test[0], test[1], test[2], test[3]);
 
         struct sigaction interrupt;
         interrupt.sa_handler = &interrupt_handler;
@@ -33,6 +27,8 @@ int main(int argc , char *argv[])
 	}
 	strcpy(server_ip, argv[1]);
 	port = atoi(argv[2]);
+        locate_segment();
+        locate_semaphores();
         try_to_connect(&socketC, &server_addr);
         signup(&socketC);
         while(TRUE){
