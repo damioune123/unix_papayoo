@@ -16,14 +16,13 @@ typedef struct s_mem{
 #include <stdio.h>
 #include <string.h>
 #include <sys/sem.h>
-#define CODE_READ_NAMES		1
-#define CODE_READ_SCORES 	2
-#define CODE_READ_CURRENT_CARDS	3
-#define CODE_WRITE_NAME         4
-#define CODE_WRITE_SCORE        5
+#define CODE_WRITE_NAME         1
+#define CODE_WRITE_SCORE        2
 
-void s_read(int,int, void**);
-void s_write(int, int, void *);
+void s_read_scores( int **);
+void s_read_names(char **);
+void s_write_score( int, int );
+void s_write_name( int, char* );
 void  create_segment();
 void  locate_segment();
 void init_semaphores();

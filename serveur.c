@@ -51,21 +51,31 @@ int main(int argc , char *argv[])
 	sigaction(SIGTERM, &interrupt, NULL);
 	sigaction(SIGQUIT, &interrupt, NULL);
         init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
-        printf("la\n");
         create_segment();
         init_semaphores();
-        printf("ici\n");
-        char *test = "YOYOYOYO";
-        char *test2[4];
-        s_write(CODE_WRITE_NAME, 0, test);
-        s_read(CODE_READ_NAMES, 0,(void**)&test2);
-
-        for(int k=0; k < 4; k++){
-            printf("DEBUG READ %s\n",test2[k]);
-        }
-        s_write(CODE_WRITE_SCORE, 0, 15);
+        //test shared memory
+        char *testA = "DAMS";
+        char *testB = "ANTOINE";
+        char *testC = "ALEXANDRE";
+        char *testD = "CHRISTOPHER";
+        char test2[4][255];
+        s_write_name(0,testA);
+        s_write_name(1,testB);
+        s_write_name(2,testC);
+        s_write_name(3,testD);
+        s_read_names((char **)test2);
+        printf("%s\n", test2[0]);
+        printf("%s\n", test2[1]);
+        printf("%s\n", test2[2]);
+        printf("%s\n", test2[3]);
+        s_write_score(0,15);
+        s_write_score(1,16);
+        s_write_score(2,17);
+        s_write_score(3,18);
         int test3[4];
-        s_read(CODE_READ_SCORES, 0, (void **)&test3);
+        s_read_scores((int **)&test3);
+        printf("%i %i %i %i \n",test3[0], test3[1], test3[2], test3[3]);
+        //end test shared memory
         while(server_running){
             usleep(50); //top prevent cpu overheat
             FD_ZERO(&fds);

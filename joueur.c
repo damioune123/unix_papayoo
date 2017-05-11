@@ -14,8 +14,12 @@ int socketC; // The socket used to communicate with the server (file descriptor)
 
 int main(int argc , char *argv[])
 {
+        //test shared memory
+        int test[4];
+        s_read_scores((int**)&test);
+        printf("%i %i %i %i \n", test[0], test[1], test[2], test[3]);
+
         struct sigaction interrupt;
-        memset(&interrupt, 0, sizeof(interrupt));
         interrupt.sa_handler = &interrupt_handler;
         sigaction(SIGTERM, &interrupt, NULL);
         sigaction(SIGKILL, &interrupt, NULL);
