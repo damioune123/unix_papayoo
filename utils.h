@@ -21,7 +21,7 @@
 #include <sys/select.h>
 #include <signal.h>
 #include "message.h"
-#include "shared_memory.h"
+#include "ipc.h"
 #define TRUE	1
 #define FALSE	0
 
