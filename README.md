@@ -6,7 +6,7 @@ It has been developed for academic purpose, to learn sockets and ipcs (system V'
 and to improve our general unix system calls knowledge.
 
 Special features to mention :
-- lock file (2 instacens of a the server executables cannot ben run at once).
+- lock file (2 instances of a the server executables cannot ben run at once).
 - file stream dupping (stderr can be optionnaly redirect to a log file).
 - signals handling (SIGINT, SIGTERM, SIGQUIT) catching for clean exit (both client and server side).
 - ipcs killing (no dirty ipcs remain after execution)
