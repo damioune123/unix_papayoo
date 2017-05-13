@@ -39,4 +39,5 @@ card pick_card();
 card add_card(card);
 void show_cards(card *, int);
 void show_card(card cardToShow, char *);
+void find_papayoo();
 #endif

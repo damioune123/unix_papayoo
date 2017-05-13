@@ -16,6 +16,7 @@ struct timeval timeout = {0, 200000};//time to wait to recv essage before cancel
 
 /* The deck's logical size */
 int deck_logical_size = 0;
+int papayoo; 
 /* The deck */
 card deck[DECK_PHYSICAL_SIZE];
 
@@ -26,6 +27,7 @@ int main(int argc , char *argv[])
         init_deck();
         shuffle_deck();
         show_cards((card*)deck,deck_logical_size);
+        find_papayoo();
         struct sigaction alarm, interrupt;
         int i, max_fd, select_res;
         fd_set fds;
@@ -354,7 +356,7 @@ void init_deck(){
         for(i=1; i <=20 ; i++){
 		card newCard; // creating new card instance;
                 newCard.number=i;
-                newCard.type= PAPAYOO_CONST;
+                newCard.type= PAYOO_CONST;
                 add_card(newCard);
         }
 
@@ -426,13 +428,46 @@ void show_card(card cardToShow, char * display){
         case DIAMONDS_CONST:
             sprintf(display, "%i of %s", cardToShow.number, DIAMONDS);
             break;
-        case PAPAYOO_CONST:
-            sprintf(display, "%i of %s", cardToShow.number,PAPAYOOS );
+        case PAYOO_CONST:
+            sprintf(display, "%i of %s", cardToShow.number,PAYOOS );
             break;
         default:
             fprintf(stderr, "Wrong card const\n");
             exit(EXIT_FAILURE);
     }
 }
+void find_papayoo(){
+        papayoo = rand() % 4; // where we try to place a card
+        mess.code=C_INFO;
+        char buffer[BUFFER_SIZE];
+        switch(papayoo){
+            case SPADES_CONST:
+                sprintf(buffer,"PAPAYOO is %s\n", SPADES);
+                printf("%s\n", buffer);
+                strcpy(mess.payload, buffer);
+                send_message_everybody(mess);
+                break;
+            case HEARTS_CONST:
+                sprintf(buffer,"PAPAYOO is %s\n", HEARTS);
+                printf("%s\n", buffer);
+                strcpy(mess.payload, buffer);
+                send_message_everybody(mess);
+                break;
+            case CLUBS_CONST:
+                sprintf(buffer,"PAPAYOO is %s\n", CLUBS);
+                printf("%s\n", buffer);
+                strcpy(mess.payload, buffer);
+                send_message_everybody(mess);
+                break;
+            case DIAMONDS_CONST:
+                sprintf(buffer,"PAPAYOO is %s\n", DIAMONDS);
+                printf("%s\n", buffer);
+                strcpy(mess.payload, buffer);
+                send_message_everybody(mess);
+                break;
+            default:
+                fprintf(stderr,"Error choosing papayoo\n");
+                exit(EXIT_FAILURE);
+         }
 
-
+}

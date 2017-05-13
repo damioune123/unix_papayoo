@@ -13,9 +13,9 @@
 #define HEARTS		"Hearts"
 #define CLUBS		"Clubs"
 #define DIAMONDS	"Diamonds"
-#define PAPAYOOS	"Papayoos"
+#define PAYOOS	        "Payoos"
 
-typedef enum card_const {SPADES_CONST, HEARTS_CONST, CLUBS_CONST, DIAMONDS_CONST, PAPAYOO_CONST} card_const;
+typedef enum card_const {SPADES_CONST, HEARTS_CONST, CLUBS_CONST, DIAMONDS_CONST, PAYOO_CONST} card_const;
 
 /* These are the two possible colors associated with any playing card, these may only be used for display purposes as the color of a card is implied by its suit */
 
