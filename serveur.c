@@ -20,7 +20,12 @@ int deck_logical_size = 0;
 card deck[DECK_PHYSICAL_SIZE];
 
 int main(int argc , char *argv[])
+
 {
+        //TEST CARDS
+        init_deck();
+        shuffle_deck();
+        show_cards((card*)deck,deck_logical_size);
         struct sigaction alarm, interrupt;
         int i, max_fd, select_res;
         fd_set fds;
@@ -319,44 +324,62 @@ void init_shared_memory(){
 
 /* Initializes the deck with all 52 possible values in order */
 void init_deck(){
-	for(int i = 0; i < DECK_PHYSICAL_SIZE; i++){
+        unsigned int i;
+        char buffer[BUFFER_SIZE];
+        for(i=1; i <=10 ; i++){
 		card newCard; // creating new card instance;
-		newCard.number = (i % 13) + 2; // setting card number to values going from 2 to 14
-		if(i < 13){ // creating spades suit
-			newCard.suit = SPADES;
-			newCard.color = BLACK;
-		}else if(i < 26){ // crating hearts suit
-			newCard.suit = HEARTS;
-			newCard.color = RED;
-		}else if(i < 29){ // creating clubs suit
-			newCard.suit = CLUBS;
-			newCard.color = BLACK;
-		}else{ // creating diamonds suit
-			newCard.suit = DIAMONDS;
-			newCard.color = RED;
-		}
-		add_card(newCard);
-	}
+                newCard.number=i;
+                newCard.type =  SPADES_CONST;
+                show_card(newCard, buffer);
+                add_card(newCard);
+        }
+        for(i=1; i <=10 ; i++){
+		card newCard; // creating new card instance;
+                newCard.number=i;
+                newCard.type = CLUBS_CONST;
+                add_card(newCard);
+        }
+        for(i=1; i <=10 ; i++){
+		card newCard; // creating new card instance;
+                newCard.number=i;
+                newCard.type= HEARTS_CONST;
+                add_card(newCard);
+        }
+        for(i=1; i <=10 ; i++){
+		card newCard; // creating new card instance;
+                newCard.number=i;
+                newCard.type= DIAMONDS_CONST;
+                add_card(newCard);
+        }
+        for(i=1; i <=20 ; i++){
+		card newCard; // creating new card instance;
+                newCard.number=i;
+                newCard.type= PAPAYOO_CONST;
+                add_card(newCard);
+        }
+
 }
 
 /* Shuffles all remaining cards in the deck  */
 void shuffle_deck(){
 	card temp[DECK_PHYSICAL_SIZE]; // creating new temporary deck to shuffle cards into
+        int already_placed[DECK_PHYSICAL_SIZE];
 	srand((unsigned int)time(NULL)); // getting seed for random number
 	int placedCards = 0;
 	
 	// this process is fairly inefficient but it shouldn't have much impact on real life performance
 	// running through all cards in deck and placing them in random spots in temp deck
-	while(placedCards < deck_logical_size) { // as long as we've not placed all cards into the new array
+	while(placedCards < DECK_PHYSICAL_SIZE) { // as long as we've not placed all cards into the new array
 		int attemptIndex = rand() % deck_logical_size; // where we try to place a card
-		if(temp[attemptIndex].suit != NULL) { // if the spot is free, place card
-			temp[attemptIndex] = deck[placedCards++]; // placing card
+		if(already_placed[attemptIndex] != 1) { // if the spot is free, place card
+			memcpy(&temp[attemptIndex], &deck[placedCards++], sizeof(card)); // placing card
+                        already_placed[attemptIndex]=1;
 		}
 	}
 
 	// copying the newly shuffled array into the current deck variable.
-	for(int i = 0; i < deck_logical_size; i++){
-		deck[i] = temp[i];
+	for(int i = 0; i < DECK_PHYSICAL_SIZE; i++){
+		memcpy(&deck[i], &temp[i],sizeof(card));
 	}
 }
 
@@ -367,7 +390,7 @@ card pick_card(){
 	}
 	card firstCard = deck[0]; // fetching first card of deck
 	for(int i = 0; i < deck_logical_size; i++){ // running through all cards in deck
-		deck[i] = deck[i+1]; // shifting cards back in the array
+		memcpy(&deck[i],&deck[i+1],sizeof(card)); // shifting cards back in the array
 	}
 	deck_logical_size--; // decrementing logical size
 	return firstCard;
@@ -375,9 +398,41 @@ card pick_card(){
 
 /* Adds one card to the logical end of the deck (bottom of the stack). Returns the added card if the operation was successful. */
 card add_card(card newCard){
-	if(deck_logical_size = DECK_PHYSICAL_SIZE){ // deck is full
+	if(deck_logical_size == DECK_PHYSICAL_SIZE){ // deck is full
 		fprintf(stderr, "Error during add_card, deck full.\n");
 	}
-	deck[deck_logical_size++] = newCard; // adds card then increments logical size
+	memcpy(&deck[deck_logical_size++],&newCard, sizeof(card)); // adds card then increments logical size
 }
+
+void show_cards(card* deck, int logical_size){
+    char display[BUFFER_SIZE];
+    for(int i = 0; i < logical_size; i++){
+        show_card(deck[i], display);
+        printf("CARD %i : %s\n",i+1, display);
+    }
+}
+
+void show_card(card cardToShow, char * display){
+    switch(cardToShow.type){
+        case SPADES_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, SPADES);
+            break;
+        case HEARTS_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, HEARTS);
+            break;
+        case CLUBS_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, CLUBS);
+            break;
+        case DIAMONDS_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, DIAMONDS);
+            break;
+        case PAPAYOO_CONST:
+            sprintf(display, "%i of %s", cardToShow.number,PAPAYOOS );
+            break;
+        default:
+            fprintf(stderr, "Wrong card const\n");
+            exit(EXIT_FAILURE);
+    }
+}
+
 

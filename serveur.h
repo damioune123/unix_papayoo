@@ -10,7 +10,6 @@
 
 #define COUNTDOWN 10 
 #define SERVER_LOCK "./server.lock"
-#define DECK_PHYSICAL_SIZE	52
 typedef void (*fct_ptr)( );
 typedef struct player {
 	int socket;
@@ -33,9 +32,11 @@ void remove_player(int); //removes a player from the game
 void start_game(); //starts the game
 void deal_cards(); //shuffles the deck and deals cards to all players
 void start_round(); //starts a new round
-void init_shared_memory();
+void init_shared_memory();//used to put the players names and reset scores and cards in shared memory
 void init_deck();
 void shuffle_deck();
 card pick_card();
 card add_card(card);
+void show_cards(card *, int);
+void show_card(card cardToShow, char *);
 #endif
