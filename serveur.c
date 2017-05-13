@@ -13,6 +13,12 @@ int server_running, game_running, amount_players, server_socket;
 int stock_addr_size = sizeof(struct sockaddr_in);
 message mess;
 struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
+
+/* The deck's logical size */
+int deck_logical_size = 0;
+/* The deck */
+card deck[DECK_PHYSICAL_SIZE];
+
 int main(int argc , char *argv[])
 {
         struct sigaction alarm, interrupt;
@@ -310,3 +316,68 @@ void init_shared_memory(){
         printf("NOM %s // score %i \n", names[i], scores[i]);
     }*/
 }
+
+/* Initializes the deck with all 52 possible values in order */
+void init_deck(){
+	for(int i = 0; i < DECK_PHYSICAL_SIZE; i++){
+		card newCard; // creating new card instance;
+		newCard.number = (i % 13) + 2; // setting card number to values going from 2 to 14
+		if(i < 13){ // creating spades suit
+			newCard.suit = SPADES;
+			newCard.color = BLACK;
+		}else if(i < 26){ // crating hearts suit
+			newCard.suit = HEARTS;
+			newCard.color = RED;
+		}else if(i < 29){ // creating clubs suit
+			newCard.suit = CLUBS;
+			newCard.color = BLACK;
+		}else{ // creating diamonds suit
+			newCard.suit = DIAMONDS;
+			newCard.color = RED;
+		}
+		add_card(newCard);
+	}
+}
+
+/* Shuffles all remaining cards in the deck  */
+void shuffle_deck(){
+	card temp[DECK_PHYSICAL_SIZE]; // creating new temporary deck to shuffle cards into
+	srand((unsigned int)time(NULL)); // getting seed for random number
+	int placedCards = 0;
+	
+	// this process is fairly inefficient but it shouldn't have much impact on real life performance
+	// running through all cards in deck and placing them in random spots in temp deck
+	while(placedCards < deck_logical_size) { // as long as we've not placed all cards into the new array
+		int attemptIndex = rand() % deck_logical_size; // where we try to place a card
+		if(temp[attemptIndex].suit != NULL) { // if the spot is free, place card
+			temp[attemptIndex] = deck[placedCards++]; // placing card
+		}
+	}
+
+	// copying the newly shuffled array into the current deck variable.
+	for(int i = 0; i < deck_logical_size; i++){
+		deck[i] = temp[i];
+	}
+}
+
+/* Retrieves the first (index 0) card in the deck, then shifts all cards back by 1 in the array. Returns the picked card if operation is successful.*/
+card pick_card(){
+	if(deck_logical_size <= 0){ // deck is empty
+		fprintf(stderr , "Error during pick_card, deck empty.\n");
+	}
+	card firstCard = deck[0]; // fetching first card of deck
+	for(int i = 0; i < deck_logical_size; i++){ // running through all cards in deck
+		deck[i] = deck[i+1]; // shifting cards back in the array
+	}
+	deck_logical_size--; // decrementing logical size
+	return firstCard;
+}
+
+/* Adds one card to the logical end of the deck (bottom of the stack). Returns the added card if the operation was successful. */
+card add_card(card newCard){
+	if(deck_logical_size = DECK_PHYSICAL_SIZE){ // deck is full
+		fprintf(stderr, "Error during add_card, deck full.\n");
+	}
+	deck[deck_logical_size++] = newCard; // adds card then increments logical size
+}
+

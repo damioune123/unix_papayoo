@@ -20,8 +20,10 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <signal.h>
+#include <time.h>
 #include "message.h"
 #include "ipc.h"
+#include "cards.h"
 #define TRUE	1
 #define FALSE	0
 
