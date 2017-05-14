@@ -23,11 +23,6 @@ card deck[DECK_PHYSICAL_SIZE];
 int main(int argc , char *argv[])
 
 {
-        //TEST CARDS
-        init_deck();
-        shuffle_deck();
-        show_cards((card*)deck,deck_logical_size);
-        find_papayoo();
         struct sigaction alarm, interrupt;
         int i, max_fd, select_res;
         fd_set fds;
@@ -67,7 +62,7 @@ int main(int argc , char *argv[])
         create_segment();
         init_semaphores();
         while(server_running){
-            usleep(50); //top prevent cpu overheat
+            usleep(100); //top prevent cpu overheat
             FD_ZERO(&fds);
             FD_SET(server_socket, &fds);
             max_fd = server_socket + 1;
@@ -102,7 +97,6 @@ int main(int argc , char *argv[])
                 }
             }
             if(game_running){
-                printf("THE GAME IS RUNNING \n"); //ONLY FOR DEBUG
             }
         }
         if(argc==3)
@@ -287,7 +281,12 @@ void start_game() {
     sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n May the best win !\n", amount_players);
     send_message_everybody(mess);
     game_running = TRUE;
+
     init_shared_memory();
+    init_deck();
+    shuffle_deck();
+    show_cards((card*)deck,deck_logical_size);
+    find_papayoo();
     start_round();
 }
 
@@ -364,24 +363,18 @@ void init_deck(){
 
 /* Shuffles all remaining cards in the deck  */
 void shuffle_deck(){
-	card temp[DECK_PHYSICAL_SIZE]; // creating new temporary deck to shuffle cards into
-        int already_placed[DECK_PHYSICAL_SIZE];
 	srand((unsigned int)time(NULL)); // getting seed for random number
-	int placedCards = 0;
-	
-	// this process is fairly inefficient but it shouldn't have much impact on real life performance
-	// running through all cards in deck and placing them in random spots in temp deck
-	while(placedCards < DECK_PHYSICAL_SIZE) { // as long as we've not placed all cards into the new array
-		int attemptIndex = rand() % deck_logical_size; // where we try to place a card
-		if(already_placed[attemptIndex] != 1) { // if the spot is free, place card
-			memcpy(&temp[attemptIndex], &deck[placedCards++], sizeof(card)); // placing card
-                        already_placed[attemptIndex]=1;
-		}
-	}
+        int count=0;	
 
-	// copying the newly shuffled array into the current deck variable.
-	for(int i = 0; i < DECK_PHYSICAL_SIZE; i++){
-		memcpy(&deck[i], &temp[i],sizeof(card));
+	// running through all cards in deck and placing them in random spots in temp deck
+	while(count <= SHUFFLE_CONST) { // as long as we've not placed all cards into the new array
+                count++;
+		int idx1 = rand() % deck_logical_size;
+		int idx2 = rand() % deck_logical_size; 
+                card temp_card;
+                memcpy(&temp_card, &deck[idx1], sizeof(card));
+                memcpy(&deck[idx1], &deck[idx2], sizeof(card));
+                memcpy(&deck[idx2], &temp_card, sizeof(card));
 	}
 }
 
@@ -437,7 +430,7 @@ void show_card(card cardToShow, char * display){
     }
 }
 void find_papayoo(){
-        papayoo = rand() % 4; // where we try to place a card
+        papayoo = rand() % 4; 
         mess.code=C_INFO;
         char buffer[BUFFER_SIZE];
         switch(papayoo){

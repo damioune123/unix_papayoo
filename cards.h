@@ -8,6 +8,7 @@
 #ifndef CARDS_H
 #define CARDS_H
 #define DECK_PHYSICAL_SIZE      60
+#define SHUFFLE_CONST    DECK_PHYSICAL_SIZE *20
 /* These are the four possible suits (symbols) associated with any playing card */
 #define SPADES		"Spades"
 #define HEARTS		"Hearts"
