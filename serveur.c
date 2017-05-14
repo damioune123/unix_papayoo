@@ -281,23 +281,31 @@ void start_game() {
     sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n May the best win !\n", amount_players);
     send_message_everybody(mess);
     game_running = TRUE;
-
     init_shared_memory();
-    init_deck();
-    shuffle_deck();
-    show_cards((card*)deck,deck_logical_size);
-    find_papayoo();
     start_round();
 }
 
 
 void start_round() {
+    init_deck();
+    shuffle_deck();
+    show_cards((card*)deck,deck_logical_size);
+    find_papayoo();
     deal_cards();
-    //TO DO
 }
 
 void deal_cards() {
-    //TO DO
+    mess.code=C_INIT_DECK_RECEIVED;
+    int amount_cards_player= DECK_PHYSICAL_SIZE/amount_players;
+    int idx=0;
+    for(int i=0; i < amount_players ; i++){
+        for(int j = 0; j < amount_cards_player ;j ++){
+            memcpy(&mess.deck[j],&deck[idx], sizeof(card));
+            idx++;
+        }
+        mess.deck_logical_size = amount_cards_player;
+        send_message(mess, players[i].socket);
+    }
 }
 
 void send_message_everybody(message msg){

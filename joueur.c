@@ -11,7 +11,8 @@ struct message mRecv; // Structure used to receive messages from the server
 char server_ip[20]; // The server's IP address (127.0.0.1 for testing)
 int port; // The server's port
 int socketC; // The socket used to communicate with the server (file descriptor)
-
+int deck_logical_size;
+card deck[DECK_PHYSICAL_SIZE];
 int main(int argc , char *argv[])
 {
 
@@ -45,6 +46,9 @@ int main(int argc , char *argv[])
                     case C_SERVER_SHUT_DOWN:
                         shutdown_socket(socketC);
                         return EXIT_FAILURE;
+                    case C_INIT_DECK_RECEIVED:
+                        init_deck(mRecv.deck, mRecv.deck_logical_size);
+                        break;
                     default:
                         continue;
                 }
@@ -52,6 +56,13 @@ int main(int argc , char *argv[])
 
         }
 	return EXIT_SUCCESS;
+}
+void init_deck(card * cards_sent, int cards_sent_size){
+    deck_logical_size = cards_sent_size;
+    for(int i=0; i < deck_logical_size ;i++){
+        memcpy(&deck[i], &cards_sent[i], sizeof(card));
+    }
+    show_cards(deck, deck_logical_size);
 }
 
 void signup(int * client_socket){
@@ -86,4 +97,33 @@ void interrupt_handler(int signum){
     shutdown_socket(socketC);
     exit(EXIT_SUCCESS);
 }
+void show_cards(card* deck, int logical_size){
+    char display[BUFFER_SIZE];
+    for(int i = 0; i < logical_size; i++){
+        show_card(deck[i], display);
+        printf("CARD %i : %s\n",i+1, display);
+    }
+}
 
+void show_card(card cardToShow, char * display){
+    switch(cardToShow.type){
+        case SPADES_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, SPADES);
+            break;
+        case HEARTS_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, HEARTS);
+            break;
+        case CLUBS_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, CLUBS);
+            break;
+        case DIAMONDS_CONST:
+            sprintf(display, "%i of %s", cardToShow.number, DIAMONDS);
+            break;
+        case PAYOO_CONST:
+            sprintf(display, "%i of %s", cardToShow.number,PAYOOS );
+            break;
+        default:
+            fprintf(stderr, "Wrong card const\n");
+            exit(EXIT_FAILURE);
+    }
+}

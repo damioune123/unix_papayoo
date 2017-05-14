@@ -4,12 +4,15 @@
 *  This file contains the structure and constants needed to communicate between the server and client through sockets.
 *
 */
+#include "cards.h"
 #ifndef MESSAGE_H
 #define MESSAGE_H
-#define MESSAGE_MAX_LENGTH 2000
+#define MESSAGE_MAX_LENGTH 512
 typedef struct message {
     int code;
     char payload[MESSAGE_MAX_LENGTH];
+    card deck[DECK_PHYSICAL_SIZE];
+    int deck_logical_size;
 } message;
 //server-> client
 //code
@@ -19,13 +22,17 @@ typedef struct message {
 #define C_INFO 3
 #define C_GAME_CANCELLED 4
 #define C_SERVER_SHUT_DOWN 5
+#define C_INIT_DECK_RECEIVED 6
+#define C_ECART_DECK_RECEIVED 7
+
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"
 #define M_CONN_REFUSE "Sorry the connection was refused by the server\n"
 #define M_GREET_CLIENT "Welcome to Papayoo Online, you are now connected\n" 
 #define M_SIGNUP_CLIENT_OK "Thank you ! You've been correctly signed up for the next game.\n" 
 //client-> server
-#define C_ADD_PLAYER 0
 #define C_DEFAULT 1337 
+#define C_ADD_PLAYER 0
+#define C_ECART_DECK_SENT 1
 //TO DO GERER L INDEX DU TABLEAU / CONSTANTE DE MANIERE PLUS COHERENTE
 #endif

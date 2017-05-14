@@ -11,4 +11,7 @@
 void signup(int *);
 void interrupt_handler(int);
 void try_to_connect(int *, struct sockaddr_in *);
+void show_cards(card *, int);
+void show_card(card cardToShow, char *);
+void init_deck(card *, int);
 #endif
