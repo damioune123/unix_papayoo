@@ -35,15 +35,19 @@ int main(int argc , char *argv[])
         while(TRUE){
             usleep(50);//to prevent cpu overheat
             if(receive_message( &mRecv, socketC)==TRUE){
-                printf("%s", mRecv.payload);
                 switch (mRecv.code){
+                    case C_INFO:
+                        printf("%s", mRecv.payload);
+                        break;
                     case C_GAME_CANCELLED:
+                        printf("%s", mRecv.payload);
                         shutdown_socket(socketC);
                         socketC=0;
                         try_to_connect(&socketC, &server_addr);
                         signup(&socketC);
                         break;
                     case C_SERVER_SHUT_DOWN:
+                        printf("%s", mRecv.payload);
                         shutdown_socket(socketC);
                         return EXIT_FAILURE;
                     case C_INIT_DECK_RECEIVED:
@@ -62,9 +66,13 @@ void init_deck(card * cards_sent, int cards_sent_size){
     for(int i=0; i < deck_logical_size ;i++){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
-    show_cards(deck, deck_logical_size);
+    choose_ecart();
 }
+void choose_ecart(){
+    printf("Here are your cards, please choose 5 for ecart (type in the cards number with space betwen them)\n");
+    show_cards(deck, deck_logical_size);
 
+}
 void signup(int * client_socket){
 	int inscriptionOK=FALSE;
 	char messageS[MESSAGE_MAX_LENGTH];

@@ -289,7 +289,6 @@ void start_game() {
 void start_round() {
     init_deck();
     shuffle_deck();
-    show_cards((card*)deck,deck_logical_size);
     find_papayoo();
     deal_cards();
 }

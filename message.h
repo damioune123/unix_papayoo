@@ -11,7 +11,7 @@
 typedef struct message {
     int code;
     char payload[MESSAGE_MAX_LENGTH];
-    card deck[DECK_PHYSICAL_SIZE];
+    card deck[DECK_PHYSICAL_SIZE/2];
     int deck_logical_size;
 } message;
 //server-> client

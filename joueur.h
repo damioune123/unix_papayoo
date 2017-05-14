@@ -14,4 +14,5 @@ void try_to_connect(int *, struct sockaddr_in *);
 void show_cards(card *, int);
 void show_card(card cardToShow, char *);
 void init_deck(card *, int);
+void choose_ecart();
 #endif
