@@ -6,19 +6,15 @@
 */
 #include "serveur.h"
 
-player players[MAX_PLAYERS];
-int port;
-FILE *fpError;
-int server_running, game_running, amount_players, server_socket;
-int stock_addr_size = sizeof(struct sockaddr_in);
-message mess;
-struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
+static player players[MAX_PLAYERS];
+static FILE *fpError;
+static int server_running, game_running, amount_players, server_socket, port, papayoo;
+static int stock_addr_size = sizeof(struct sockaddr_in);
+static message mess;
+static struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 
-/* The deck's logical size */
-int deck_logical_size = 0;
-int papayoo; 
-/* The deck */
-card deck[DECK_PHYSICAL_SIZE];
+static card deck[DECK_PHYSICAL_SIZE];
+static int deck_logical_size = 0;
 
 int main(int argc , char *argv[])
 
@@ -547,6 +543,11 @@ void show_card(card cardToShow, char * display){
             exit(EXIT_FAILURE);
     }
 }
+/**
+ *
+ * This function finds randomly the type of the papayoo for the next round
+ *
+ */
 void find_papayoo(){
         papayoo = rand() % 4; 
         mess.code=C_INFO;
