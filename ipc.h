@@ -17,10 +17,10 @@ typedef struct s_mem{
 	int scores[MAX_PLAYERS];
 	char names[MAX_PLAYERS][BUFFER_SIZE];
 } s_mem;
-#define TOKEN_MUT_MEM 137
-#define TOKEN_MUT_RC 138
-#define TOKEN_SEG_MEM 139
-#define TOKEN_SEG_RC 140
+#define TOKEN_MUT_MEM 137 //to generate a unique identifier for the mutex protecting shared_memory segment  of the structure s_mem
+#define TOKEN_MUT_RC 138 //to generate a unique identifier for the mutex protecting shared memory segment of the amount of readers
+#define TOKEN_SEG_MEM 139 // to generate a unique identifier for the shared memory segment of the structure s_mem
+#define TOKEN_SEG_RC 140 // to generate a unique identifier for the shared memory segment of the amount of readers
 
 void s_read_scores( int **);//used for filling the int array with the scores in shared memory
 void s_read_names(char **);//used for filling the char * array with the player's names in shared memory

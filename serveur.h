@@ -35,7 +35,6 @@ void start_round(); //starts a new round
 void init_shared_memory();//used to put the players names and reset scores and cards in shared memory
 void init_deck();
 void shuffle_deck();
-card pick_card();
 card add_card(card);
 void show_cards(card *, int);
 void show_card(card cardToShow, char *);

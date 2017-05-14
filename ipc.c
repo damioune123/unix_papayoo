@@ -5,15 +5,22 @@
 *
 */
 #include "ipc.h"
-s_mem *board;
+static s_mem *board;//the pointer to the structure used to read and write stored in the shared memory
+static int * rc; // pointer to the amount of readers stored in shared memory
+static struct sembuf sop;// this is a structure used to make operation on the System V's semaphores (mainly up and down)
+static int sem_id_mutex_mem; // the identifier of the mutex to lock access the s_mem var (board)  in shared memory
+static int sem_id_mutex_rc; // the identifier of the mutex to lock access to the amount or readers (rc)  of the s_mem var stored in shared memory
+static int shmid_mem; //the shmid identifier of the s_mem var (board) stored in shared_memory
+static int shmid_rc;//the shmid identifier of the amount of reader (rc) stored in shared_memory
 
-struct sembuf sop;
-int sem_id_mutex_mem; // locking shared memory access
-int sem_id_mutex_rc; // locking shared reader count access
-int shmid_mem;
-int shmid_rc;
-int * rc;// amount of readers
-
+/**
+ *
+ * This function is used to read the array of scores contained in the board var stored in shared memory. Access is protected with Courtois's semaphores algorithm.
+ *  Many users can read the s_mem data at once, but only one writer is allowed at once.
+ *
+ *  @param int ** data : This is the pointer to the array of int that is going to be filled with scores array.
+ *
+ */
 void s_read_scores(int **data){
 	void * ret = NULL;
 	down(sem_id_mutex_rc);			// get exclusive access to rc
@@ -29,6 +36,13 @@ void s_read_scores(int **data){
 
 }
 
+/**
+ *
+ * This function is used to read the array of players' names contained in the board var stored in shared memory. Access is protected with Courtois's semaphores algorithm.
+ *  Many users can read the s_mem data at once, but only one writer is allowed at once.
+ *
+ *  @param char ** data : This is the array  of char * that is going to be filled with names' array.
+ */
 void s_read_names(char **data){
 	void * ret = NULL;
 	down(sem_id_mutex_rc);			// get exclusive access to rc
@@ -43,19 +57,51 @@ void s_read_names(char **data){
 	up(sem_id_mutex_rc);			// release exclusive access to rc
 
 }
+/**
+ *
+ * This function is used to write a name at an known index in the array of names stored in the board var (in shared memory)
+ *
+ * @param int idx : the index of the player 
+ *
+ * @param char * data : the name of the player
+ *
+ */
 void s_write_name(int idx, char* data){
+    if(idx<0 || idx >= MAX_PLAYERS){
+        fprintf(stderr, "Wrong index\n");
+        exit(EXIT_FAILURE);
+    }
     down(sem_id_mutex_mem);			// get exclusive access
     strcpy(board->names[idx],data);
     up(sem_id_mutex_mem);			// release exclusive access
 
 }
 
+/**
+ *
+ * This function is used to write a score at an known index in the array of scores stored in the board var (in shared memory)
+ *
+ * @param int idx : the index of the player 
+ *
+ * @param int data : the score of the player
+ */
 void s_write_score(int idx, int data){
+    if(idx<0 || idx >= MAX_PLAYERS){
+        fprintf(stderr, "Wrong index\n");
+        exit(EXIT_FAILURE);
+    }
     down(sem_id_mutex_mem);			// get exclusive access
     board->scores[idx]=data;
     up(sem_id_mutex_mem);			// release exclusive access
 }
 
+/**
+ *
+ * This function ought to be used by server side only and aims to create segments in shared memory both for the structure s_mem (containing names, scores and cards of the current "pli" ) and the amount of players also stored in memory.
+ * After creating the segments, both segment shmid identifiers (shmid_mem and shmid_rc) are initialized for the server and the board and rc  pointers refer to the shared memories created.
+ *
+ *
+ */
 
 void create_segment(){
     if ((shmid_mem = shmget(TOKEN_SEG_MEM, sizeof(s_mem), IPC_CREAT | 0666)) < 0) {
@@ -79,6 +125,12 @@ void create_segment(){
     }
 
 }
+/**
+ *
+ * This function ought to be used by client side only when all the shared memories segments have already been created with the void create_segement() function.
+ * It allows the current player to init the static vars of this file : shmid_mem, shmid_rc, board and rc with the same values of the ones created during the creation of the segments.
+ *
+ */
 void locate_segment(){
     if ((shmid_mem = shmget(TOKEN_SEG_MEM, sizeof(s_mem), 0666)) < 0) {
         perror("shmget s_mem");
@@ -100,6 +152,13 @@ void locate_segment(){
         exit(EXIT_FAILURE);
     }
 }
+/**
+ *
+ * This function ought to be used by server side only and aims to create the System V's semaphores necessary to lock access to the segments of shared memory pointed by board and rc.
+ * The static vars of this file : sem_id_mutex_mem (to protect access to board) and sem_id_mutex_rc (to protect access to rc) are initalized with the identifiers of the newly created semaphores.
+ * Both semaphores are initialized with a value of 1.
+ *
+ */
 void init_semaphores(){
     if( (sem_id_mutex_mem = semget(TOKEN_MUT_MEM,1,IPC_CREAT|0666)) < 0 )
     {	perror("semget");
@@ -114,6 +173,12 @@ void init_semaphores(){
 
 
 }
+/**
+ *
+ * This function ought to be used by client side only.It allows the current player to init the static vars of this file : sem_id_mutex_mem (to protect access to board)  and sem_id_mutex_rc (to protect access to rc) with the identifiers of the semaphores created by the server.
+ *
+ *
+ */
 void locate_semaphores(){
     if( (sem_id_mutex_mem = semget(TOKEN_MUT_MEM,1,0666)) < 0 )
     {	perror("semget");
@@ -124,6 +189,12 @@ void locate_semaphores(){
         exit(EXIT_FAILURE);
     }
 }
+/**
+ * This function allows to do a standard down operation on a System V's semaphore with its identifier.
+ *
+ * @param int semid : the identifer of the semaphore.
+ *
+ */
 void down(int semid){
     sop.sem_op = -1;
     if( semop(semid,&sop,1) < 0 )
@@ -131,6 +202,13 @@ void down(int semid){
         exit(EXIT_FAILURE);
     }
 }
+/**
+ *
+ * This function allows to do a standard up operation on a System V's semaphore with its identifier.
+ *
+ * @param int semid : the identifer of the semaphore.
+ *
+ */
 void up(int semid){
     sop.sem_op = 1;
     if( semop(semid,&sop,1) < 0 )
@@ -138,6 +216,11 @@ void up(int semid){
         exit(EXIT_FAILURE);
     }
 }
+/**
+ *
+ * This function allows to kill all remaining ipcs (shared memory segments and semaphores) when the server program is shutting down.
+ *
+ */
 void kill_ipcs(){
     semctl(sem_id_mutex_mem, 0, IPC_RMID, NULL);
     semctl(sem_id_mutex_rc, 0, IPC_RMID, NULL);

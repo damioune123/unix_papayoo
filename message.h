@@ -34,5 +34,4 @@ typedef struct message {
 #define C_DEFAULT 1337 
 #define C_ADD_PLAYER 0
 #define C_ECART_DECK_SENT 1
-//TO DO GERER L INDEX DU TABLEAU / CONSTANTE DE MANIERE PLUS COHERENTE
 #endif

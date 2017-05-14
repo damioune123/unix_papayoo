@@ -385,18 +385,6 @@ void shuffle_deck(){
 	}
 }
 
-/* Retrieves the first (index 0) card in the deck, then shifts all cards back by 1 in the array. Returns the picked card if operation is successful.*/
-card pick_card(){
-	if(deck_logical_size <= 0){ // deck is empty
-		fprintf(stderr , "Error during pick_card, deck empty.\n");
-	}
-	card firstCard = deck[0]; // fetching first card of deck
-	for(int i = 0; i < deck_logical_size; i++){ // running through all cards in deck
-		memcpy(&deck[i],&deck[i+1],sizeof(card)); // shifting cards back in the array
-	}
-	deck_logical_size--; // decrementing logical size
-	return firstCard;
-}
 
 /* Adds one card to the logical end of the deck (bottom of the stack). Returns the added card if the operation was successful. */
 card add_card(card newCard){

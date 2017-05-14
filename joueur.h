@@ -8,11 +8,11 @@
 #include "socket.h"
 #ifndef JOUEUR_H
 #define JOUEUR_H
-void signup(int *);
-void interrupt_handler(int);
-void try_to_connect(int *, struct sockaddr_in *);
-void show_cards(card *, int);
-void show_card(card cardToShow, char *);
-void init_deck(card *, int);
-void choose_ecart();
+void signup(int *);//used to signup a client with his name (once connected to the server)
+void interrupt_handler(int);//use to catch SIGTERM, SIGQUIT AND SIGINT FOR CLEAN EXIT
+void try_to_connect(int *, struct sockaddr_in *);//use to try to connect to server till it worked
+void show_cards(card *, int);//used to show an entier deck of cards
+void show_card(card cardToShow, char *);//used to show a single card
+void init_deck(card *, int);//used to init the deck of the player with cards sent by server
+void choose_ecart();//used to ask player to remove 5 cards and sends them to the server for th "ecart"
 #endif
