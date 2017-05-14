@@ -6,7 +6,6 @@
  */
 #include "serveur.h"
 static player players[MAX_PLAYERS];
-static FILE *fpError;
 static int server_running, game_running, amount_players, server_socket, port, papayoo;
 static int stock_addr_size = sizeof(struct sockaddr_in);
 static message mess;
@@ -15,6 +14,7 @@ static card deck[DECK_PHYSICAL_SIZE];
 static int deck_logical_size = 0;
 
 int main(int argc , char *argv[]){
+    FILE *fpError;
     struct sigaction alarm, interrupt;
     int i, max_fd, select_res;
     fd_set fds;
@@ -544,29 +544,23 @@ void find_papayoo(){
         case SPADES_CONST:
             sprintf(buffer,"PAPAYOO is %s\n", SPADES);
             printf("%s\n", buffer);
-            strcpy(mess.payload, buffer);
-            send_message_everybody(mess);
             break;
         case HEARTS_CONST:
             sprintf(buffer,"PAPAYOO is %s\n", HEARTS);
             printf("%s\n", buffer);
-            strcpy(mess.payload, buffer);
-            send_message_everybody(mess);
             break;
         case CLUBS_CONST:
             sprintf(buffer,"PAPAYOO is %s\n", CLUBS);
             printf("%s\n", buffer);
-            strcpy(mess.payload, buffer);
-            send_message_everybody(mess);
             break;
         case DIAMONDS_CONST:
             sprintf(buffer,"PAPAYOO is %s\n", DIAMONDS);
             printf("%s\n", buffer);
-            strcpy(mess.payload, buffer);
-            send_message_everybody(mess);
             break;
         default:
             fprintf(stderr,"Error choosing papayoo\n");
             exit(EXIT_FAILURE);
     }
+    strcpy(mess.payload, buffer);
+    send_message_everybody(mess);
 }

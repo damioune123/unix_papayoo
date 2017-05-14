@@ -54,7 +54,6 @@ void init_server(int *server_socket, struct sockaddr_in *server_addr, int port, 
  *
  *
  */
-
 void connect_to_server(int *client_socket , struct sockaddr_in *server_addr, char * server_ip, int port){
 	//Create socket
 	*client_socket = socket(AF_INET , SOCK_STREAM , 0);
