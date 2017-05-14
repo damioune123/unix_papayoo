@@ -1,10 +1,9 @@
 /**
-*
-*  AUTHORS : MANIET Alexandre (amaniet2015)(serie 2) , MEUR Damien (dmeur15)(serie 2)
-*  This file contains the source code needed for the player side program.
-*
-*/
-
+ *
+ *  AUTHORS : MANIET Alexandre (amaniet2015)(serie 2) , MEUR Damien (dmeur15)(serie 2)
+ *  This file contains the source code needed for the player side program.
+ *
+ */
 #include "joueur.h"
 static struct message mSent; // Structure used to send messages to the server
 static struct message mRecv; // Structure used to receive messages from the server
@@ -13,53 +12,50 @@ static int port; // The server's port
 static int socketC; // The socket used to communicate with the server (file descriptor)
 static int deck_logical_size;// the logical size of the player's deck
 static card deck[DECK_PHYSICAL_SIZE];// the player's deck
-int main(int argc , char *argv[])
-{
-
-        struct sigaction interrupt;
-        interrupt.sa_handler = &interrupt_handler;
-        sigaction(SIGTERM, &interrupt, NULL);
-        sigaction(SIGQUIT, &interrupt, NULL);
-        sigaction(SIGINT, &interrupt, NULL);
-	struct sockaddr_in server_addr; // The server's socket address
-	if(argc!=3){
-		fprintf(stderr, "Usage %s ip port\n", argv[0]); // Usage check
-		return EXIT_FAILURE;
-	}
-	strcpy(server_ip, argv[1]);
-	port = atoi(argv[2]);
-        locate_segment();
-        locate_semaphores();
-        try_to_connect(&socketC, &server_addr);
-        signup(&socketC);
-        while(TRUE){
-            usleep(50);//to prevent cpu overheat
-            if(receive_message( &mRecv, socketC)==TRUE){
-                switch (mRecv.code){
-                    case C_INFO:
-                        printf("%s", mRecv.payload);
-                        break;
-                    case C_GAME_CANCELLED:
-                        printf("%s", mRecv.payload);
-                        shutdown_socket(socketC);
-                        socketC=0;
-                        try_to_connect(&socketC, &server_addr);
-                        signup(&socketC);
-                        break;
-                    case C_SERVER_SHUT_DOWN:
-                        printf("%s", mRecv.payload);
-                        shutdown_socket(socketC);
-                        return EXIT_FAILURE;
-                    case C_INIT_DECK_RECEIVED:
-                        init_deck(mRecv.deck, mRecv.deck_logical_size);
-                        break;
-                    default:
-                        continue;
-                }
+int main(int argc , char *argv[]){
+    struct sigaction interrupt;
+    interrupt.sa_handler = &interrupt_handler;
+    sigaction(SIGTERM, &interrupt, NULL);
+    sigaction(SIGQUIT, &interrupt, NULL);
+    sigaction(SIGINT, &interrupt, NULL);
+    struct sockaddr_in server_addr; // The server's socket address
+    if(argc!=3){
+        fprintf(stderr, "Usage %s ip port\n", argv[0]); // Usage check
+        return EXIT_FAILURE;
+    }
+    strcpy(server_ip, argv[1]);
+    port = atoi(argv[2]);
+    locate_segment();
+    locate_semaphores();
+    try_to_connect(&socketC, &server_addr);
+    signup(&socketC);
+    while(TRUE){
+        usleep(50);//to prevent cpu overheat
+        if(receive_message( &mRecv, socketC)==TRUE){
+            switch (mRecv.code){
+                case C_INFO:
+                    printf("%s", mRecv.payload);
+                    break;
+                case C_GAME_CANCELLED:
+                    printf("%s", mRecv.payload);
+                    shutdown_socket(socketC);
+                    socketC=0;
+                    try_to_connect(&socketC, &server_addr);
+                    signup(&socketC);
+                    break;
+                case C_SERVER_SHUT_DOWN:
+                    printf("%s", mRecv.payload);
+                    shutdown_socket(socketC);
+                    return EXIT_FAILURE;
+                case C_INIT_DECK_RECEIVED:
+                    init_deck(mRecv.deck, mRecv.deck_logical_size);
+                    break;
+                default:
+                    continue;
             }
-
         }
-	return EXIT_SUCCESS;
+    }
+    return EXIT_SUCCESS;
 }
 /**
  * This function will fill up the deck and deck_logical_size static vars with the ones sent by the server after it finishes dealing cards.
@@ -72,18 +68,87 @@ void init_deck(card * cards_sent, int cards_sent_size){
     for(int i=0; i < deck_logical_size ;i++){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
-    choose_ecart();
+    send_and_receive_ecart(socketC);
 }
 /**
  *
  * This function is used to allow the player to choose 5 cards to give to another player at the beginning of a round. The cards will be chosen and then sent to the server that will give them to another player.
  * 
  */
-void choose_ecart(){
-    printf("Here are your cards, please choose 5 for ecart (type in the cards number with space betwen them)\n");
+static int array_ints[5];
+static char buffer[BUFFER_SIZE] = "12 1 2 5 6 7\n";
+void send_and_receive_ecart(int client_socket){
     show_cards(deck, deck_logical_size);
-
+    printf("Here are your cards, please choose 5 for ecart (type in the cards number with space betwen them)\n");
+    int ecart_ok=FALSE;
+    while(TRUE){
+        if(convert_input_to_integer_array(buffer,(int **)&array_ints))
+            break;
+        /*
+           if( fgets(buffer, BUFFER_SIZE, stdin)!= NULL){
+           printf("%s\n", buffer);
+           if(convert_input_to_integer_array(buffer, &array_ints))
+           break;
+           else
+           printf("Please choose 5 card number from 1 to %i\n",deck_logical_size);
+           }
+           */
+    }
+    //copying chosen carts in the array of cards to send to server
+    for(int i=0; i< 5;i++){
+    memcpy(&mSent.deck[array_ints[i]], &deck[array_ints[i]], sizeof(card));
+    }
+    mSent.deck_logical_size=5;
+    mSent.code=C_ECART_DECK_SENT;
+    show_cards(mSent.deck, mSent.deck_logical_size);
+    /*
+    send_message(mSent, client_socket);
+    receive_message(&mRecv, client_socket);
+    while(mRecv.code != C_ALL_ECART_DECK_RECEIVED){
+    printf("All players haven't sent their ecart. Please wait\n Next check in %i seconds\n", TIME_TRY_CONNECT);
+    sleep(TIME_TRY_CONNECT);
+    receive_message(&mRecv, client_socket);
+    }
+    printf("You've received your ecart :\n");
+    show_cards(mRecv.deck, mRecv.deck_logical_size);
+    */
 }
+/**
+ *
+ * This function converts a char * into an array of 5 integers.
+ *
+ * @param char *input : the char * input
+ *
+ * @param int ** array : the array of integers to fill in
+ *
+ * @return  TRUE: if the char * contains 5 integers betwen 1 and the deck size, FALSE else
+ *
+ */
+boolean convert_input_to_integer_array(char * input, int ** array){
+    printf("DEBUG %s\n", input);
+    char *numberS;
+    int number;
+    int number_typed_in=0;
+    char seps[] = ",\t\n ";
+    numberS = strtok(input, seps);
+    printf("ici\n");
+    number = atoi(numberS);
+    printf("ici 2 %i \n", number);
+    if(number <=1 || number >= deck_logical_size)
+        return FALSE;
+    *array[number_typed_in++] = number-1;
+    printf("la");/*
+    while((numberS = strtok(NULL, seps))!=NULL){
+        number = atoi(numberS);
+        if(number <=1 || number >= deck_logical_size)
+            return FALSE;
+        array[number_typed_in++] = number-1;
+        if(number_typed_in >5)
+            return FALSE;
+    }*/
+    return TRUE;
+}
+
 /**
  *
  * This function will allow the current connected client to signup with his name to the server. Untill it hasn't done this operation, the player is considered as unregistered and the lobby will wait for him to start a game.
@@ -94,17 +159,17 @@ void choose_ecart(){
  *
  */
 void signup(int * client_socket){
-	int inscriptionOK=FALSE;
-	char messageS[MESSAGE_MAX_LENGTH];
-	while(TRUE){
-		printf("Enter your name : ");
-		scanf("%s" , messageS);
-		strcpy(mSent.payload, messageS);
-		mSent.code=C_ADD_PLAYER;
-                send_message( mSent, *client_socket);
-		if(mRecv.code==C_OK)
-                    break;
-	}
+    int inscriptionOK=FALSE;
+    char messageS[MESSAGE_MAX_LENGTH];
+    while(TRUE){
+        printf("Enter your name : ");
+        scanf("%s" , messageS);
+        strcpy(mSent.payload, messageS);
+        mSent.code=C_ADD_PLAYER;
+        send_message( mSent, *client_socket);
+        if(mRecv.code==C_OK)
+            break;
+    }
 }
 /**
  *

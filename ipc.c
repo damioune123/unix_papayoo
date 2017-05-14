@@ -1,9 +1,9 @@
 /**
-*
-*  AUTHORS : MANIET Alexandre (amaniet15)(serie 2) , MEUR Damien (dmeur15)(serie 2)
-*  This file contains all the  implemented functions needed for ipc handling
-*
-*/
+ *
+ *  AUTHORS : MANIET Alexandre (amaniet15)(serie 2) , MEUR Damien (dmeur15)(serie 2)
+ *  This file contains all the  implemented functions needed for ipc handling
+ *
+ */
 #include "ipc.h"
 static s_mem *board;//the pointer to the structure used to read and write stored in the shared memory
 static int * rc; // pointer to the amount of readers stored in shared memory
@@ -12,7 +12,6 @@ static int sem_id_mutex_mem; // the identifier of the mutex to lock access the s
 static int sem_id_mutex_rc; // the identifier of the mutex to lock access to the amount or readers (rc)  of the s_mem var stored in shared memory
 static int shmid_mem; //the shmid identifier of the s_mem var (board) stored in shared_memory
 static int shmid_rc;//the shmid identifier of the amount of reader (rc) stored in shared_memory
-
 /**
  *
  * This function is used to read the array of scores contained in the board var stored in shared memory. Access is protected with Courtois's semaphores algorithm.
@@ -22,20 +21,18 @@ static int shmid_rc;//the shmid identifier of the amount of reader (rc) stored i
  *
  */
 void s_read_scores(int **data){
-	void * ret = NULL;
-	down(sem_id_mutex_rc);			// get exclusive access to rc
-	*rc = *rc + 1;			// one more reader
-	if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
-	up(sem_id_mutex_rc);			// release exclusive access to rc
-        memcpy(data,board->scores, sizeof(board->scores));
-	down(sem_id_mutex_rc);			// get exclusive access to rc
-	*rc = *rc - 1;			// one less reader
-	if(*rc == 0)
-            up(sem_id_mutex_mem);	// if last reader
-	up(sem_id_mutex_rc);			// release exclusive access to rc
-
+    void * ret = NULL;
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc + 1;			// one more reader
+    if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
+    up(sem_id_mutex_rc);			// release exclusive access to rc
+    memcpy(data,board->scores, sizeof(board->scores));
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc - 1;			// one less reader
+    if(*rc == 0)
+        up(sem_id_mutex_mem);	// if last reader
+    up(sem_id_mutex_rc);			// release exclusive access to rc
 }
-
 /**
  *
  * This function is used to read the array of players' names contained in the board var stored in shared memory. Access is protected with Courtois's semaphores algorithm.
@@ -44,18 +41,17 @@ void s_read_scores(int **data){
  *  @param char ** data : This is the array  of char * that is going to be filled with names' array.
  */
 void s_read_names(char **data){
-	void * ret = NULL;
-	down(sem_id_mutex_rc);			// get exclusive access to rc
-	*rc = *rc + 1;			// one more reader
-	if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
-	up(sem_id_mutex_rc);			// release exclusive access to rc
-        memcpy(data,board->names, sizeof(board->names));
-	down(sem_id_mutex_rc);			// get exclusive access to rc
-	*rc = *rc - 1;			// one less reader
-	if(*rc == 0)
-            up(sem_id_mutex_mem);	// if last reader
-	up(sem_id_mutex_rc);			// release exclusive access to rc
-
+    void * ret = NULL;
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc + 1;			// one more reader
+    if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
+    up(sem_id_mutex_rc);			// release exclusive access to rc
+    memcpy(data,board->names, sizeof(board->names));
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc - 1;			// one less reader
+    if(*rc == 0)
+        up(sem_id_mutex_mem);	// if last reader
+    up(sem_id_mutex_rc);			// release exclusive access to rc
 }
 /**
  *
@@ -74,7 +70,6 @@ void s_write_name(int idx, char* data){
     down(sem_id_mutex_mem);			// get exclusive access
     strcpy(board->names[idx],data);
     up(sem_id_mutex_mem);			// release exclusive access
-
 }
 
 /**
@@ -94,7 +89,6 @@ void s_write_score(int idx, int data){
     board->scores[idx]=data;
     up(sem_id_mutex_mem);			// release exclusive access
 }
-
 /**
  *
  * This function ought to be used by server side only and aims to create segments in shared memory both for the structure s_mem (containing names, scores and cards of the current "pli" ) and the amount of players also stored in memory.
@@ -123,7 +117,6 @@ void create_segment(){
         perror("shmat rc");
         exit(EXIT_FAILURE);
     }
-
 }
 /**
  *
@@ -170,8 +163,6 @@ void init_semaphores(){
     }
     semctl(sem_id_mutex_mem, 0, SETVAL, 1);
     semctl(sem_id_mutex_rc, 0, SETVAL, 1);
-
-
 }
 /**
  *

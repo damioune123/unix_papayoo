@@ -24,7 +24,5 @@
 #include "message.h"
 #include "ipc.h"
 #include "cards.h"
-#define TRUE	1
-#define FALSE	0
-
+typedef enum boolean {FALSE, TRUE} boolean;
 #endif

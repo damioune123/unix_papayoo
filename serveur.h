@@ -8,7 +8,7 @@
 #define SERVEUR_H
 #include "socket.h"
 
-#define COUNTDOWN 30 //Countdown to wait to start the game during lobby registration
+#define COUNTDOWN 10 //Countdown to wait to start the game during lobby registration
 #define SERVER_LOCK "./server.lock"
 typedef void (*fct_ptr)( );
 typedef struct player {
@@ -27,7 +27,7 @@ void send_message_everybody(message);//send message to all players
 void clear_lobby();//clear the lobby
 void add_client(int, struct sockaddr_in*); //adds a client to the fdset
 void add_player(int, message); //confirm connection and inform client
-int all_players_registered();//return TRUE if all connected client are connected, FALSE else
+boolean all_players_registered();//return TRUE if all connected client are connected, FALSE else
 void remove_player(int); //removes a player from the game
 void start_game(); //starts the game
 void deal_cards(); //shuffles the deck and deals cards to all players

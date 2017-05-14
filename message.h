@@ -23,7 +23,7 @@ typedef struct message {
 #define C_GAME_CANCELLED 4
 #define C_SERVER_SHUT_DOWN 5
 #define C_INIT_DECK_RECEIVED 6
-#define C_ECART_DECK_RECEIVED 7
+#define C_ALL_ECART_DECK_RECEIVED 7
 
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"

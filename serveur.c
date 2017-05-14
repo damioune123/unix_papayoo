@@ -1,109 +1,103 @@
 /**
-*
-*  AUTHORS : MANIET Alexandre (amaniet2015)(serie 2), MEUR Damien (dmeur15)(serie 2)
-*  This file contains the source code of the server side of the program.
-*
-*/
+ *
+ *  AUTHORS : MANIET Alexandre (amaniet2015)(serie 2), MEUR Damien (dmeur15)(serie 2)
+ *  This file contains the source code of the server side of the program.
+ *
+ */
 #include "serveur.h"
-
 static player players[MAX_PLAYERS];
 static FILE *fpError;
 static int server_running, game_running, amount_players, server_socket, port, papayoo;
 static int stock_addr_size = sizeof(struct sockaddr_in);
 static message mess;
 static struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
-
 static card deck[DECK_PHYSICAL_SIZE];
 static int deck_logical_size = 0;
 
-int main(int argc , char *argv[])
-
-{
-        struct sigaction alarm, interrupt;
-        int i, max_fd, select_res;
-        fd_set fds;
-	struct sockaddr_in server_addr, client_addr;
-        int fdLock = open(SERVER_LOCK, O_RDWR);
-        fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
-
-	if (fdLock == -1) { 
-		perror("Erreur ouverture fichier lock\n");
-		exit(EXIT_FAILURE);
-	}
-	if (flock(fdLock, LOCK_EX | LOCK_NB) == -1) { 
-		fprintf(stderr,"Ce daemon ne peut pas etre ouvert plusieurs  fois, une autre instance est en cours\n");
-		exit(EXIT_FAILURE);
-	}
-        if(argc!=2 && argc !=3){
-            fprintf(stderr, "Usage %s port [log_file]\n", argv[0]);
-            exit(EXIT_FAILURE);
+int main(int argc , char *argv[]){
+    struct sigaction alarm, interrupt;
+    int i, max_fd, select_res;
+    fd_set fds;
+    struct sockaddr_in server_addr, client_addr;
+    int fdLock = open(SERVER_LOCK, O_RDWR);
+    fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+    if (fdLock == -1) { 
+        perror("Erreur ouverture fichier lock\n");
+        exit(EXIT_FAILURE);
+    }
+    if (flock(fdLock, LOCK_EX | LOCK_NB) == -1) { 
+        fprintf(stderr,"Ce daemon ne peut pas etre ouvert plusieurs  fois, une autre instance est en cours\n");
+        exit(EXIT_FAILURE);
+    }
+    if(argc!=2 && argc !=3){
+        fprintf(stderr, "Usage %s port [log_file]\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    if(argc==3)
+        fpError =freopen(argv[2], "a", stderr);
+    port=atoi(argv[1]);
+    reset_players();
+    amount_players=0;
+    server_running=TRUE;
+    game_running=FALSE;
+    alarm.sa_handler = &alarm_handler;
+    interrupt.sa_handler = &interrupt_handler;
+    interrupt.sa_flags=0;
+    sigemptyset(&interrupt.sa_mask);
+    sigaddset(&interrupt.sa_mask, SIGALRM);//prevents alarm to cancel a shutdown operation
+    sigaction(SIGALRM, &alarm, NULL);
+    sigaction(SIGINT, &interrupt, NULL);
+    sigaction(SIGTERM, &interrupt, NULL);
+    sigaction(SIGQUIT, &interrupt, NULL);
+    init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
+    create_segment();
+    init_semaphores();
+    while(server_running){
+        usleep(100); //top prevent cpu overheat
+        FD_ZERO(&fds);
+        FD_SET(server_socket, &fds);
+        max_fd = server_socket + 1;
+        for (i = 0; i < MAX_PLAYERS; i++) {
+            if (players[i].socket > 0) {
+                FD_SET(players[i].socket, &fds);
+            }
+            if (players[i].socket >= max_fd) {
+                max_fd = players[i].socket+1;
+            }
         }
-        if(argc==3)
-            fpError =freopen(argv[2], "a", stderr);
-        port=atoi(argv[1]);
-        reset_players();
-        amount_players=0;
-        server_running=TRUE;
-        game_running=FALSE;
-	alarm.sa_handler = &alarm_handler;
-	interrupt.sa_handler = &interrupt_handler;
-        interrupt.sa_flags=0;
-        sigemptyset(&interrupt.sa_mask);
-        sigaddset(&interrupt.sa_mask, SIGALRM);//prevents alarm to cancel a shutdown operation
-	sigaction(SIGALRM, &alarm, NULL);
-	sigaction(SIGINT, &interrupt, NULL);
-	sigaction(SIGTERM, &interrupt, NULL);
-	sigaction(SIGQUIT, &interrupt, NULL);
-        init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
-        create_segment();
-        init_semaphores();
-        while(server_running){
-            usleep(100); //top prevent cpu overheat
-            FD_ZERO(&fds);
-            FD_SET(server_socket, &fds);
-            max_fd = server_socket + 1;
-            for (i = 0; i < MAX_PLAYERS; i++) {
-                if (players[i].socket > 0) {
-                    FD_SET(players[i].socket, &fds);
-                }
-                if (players[i].socket >= max_fd) {
-                    max_fd = players[i].socket+1;
-                }
+        if ((select_res = select(max_fd, &fds, NULL, NULL, &timeout)) < 0) {
+            if (errno != EINTR) {
+                shutdown_server();
+                return EXIT_FAILURE;
             }
-            if ((select_res = select(max_fd, &fds, NULL, NULL, &timeout)) < 0) {
-                if (errno != EINTR) {
-                    shutdown_server();
-                    return EXIT_FAILURE;
-                }
+        }
+        if (select_res > 0) {
+            if (FD_ISSET(server_socket, &fds)) {
+                add_client(server_socket, &client_addr);
             }
-
-            if (select_res > 0) {
-                if (FD_ISSET(server_socket, &fds)) {
-                    add_client(server_socket, &client_addr);
-                }
-                for (i = 0; i < amount_players; i++) {
-                    if (FD_ISSET(players[i].socket, &fds)) {
-                        if (receive_message(&mess, players[i].socket)) {
-                            dispatcher[mess.code] (players[i].socket, mess);
-                        }
-                        else{
-                            remove_player(players[i].socket);
-                        }
+            for (i = 0; i < amount_players; i++) {
+                if (FD_ISSET(players[i].socket, &fds)) {
+                    if (receive_message(&mess, players[i].socket)) {
+                        dispatcher[mess.code] (players[i].socket, mess);
+                    }
+                    else{
+                        remove_player(players[i].socket);
                     }
                 }
             }
-            if(game_running){
-            }
         }
-        if(argc==3)
-            fclose(fpError);
-        if(close(fdLock)==-1){
-            perror("Error closing lock file\n");
-            return EXIT_FAILURE;
+        if(game_running){
         }
-        shutdown_socket(server_socket);
-        shutdown_server();
-	return EXIT_SUCCESS;
+    }
+    if(argc==3)
+        fclose(fpError);
+    if(close(fdLock)==-1){
+        perror("Error closing lock file\n");
+        return EXIT_FAILURE;
+    }
+    shutdown_socket(server_socket);
+    shutdown_server();
+    return EXIT_SUCCESS;
 }
 /**
  *
@@ -116,27 +110,27 @@ int main(int argc , char *argv[])
  *
  */
 void add_client(int server_socket, struct sockaddr_in *cl_addr) {
-	int new_cl_socket;
-	int cl_addr_length = sizeof(struct sockaddr_in);
-	if ((new_cl_socket = accept(server_socket, (struct sockaddr *)cl_addr, (socklen_t*) &cl_addr_length)) < 0) {
-		perror("Connection error");
-		exit(EXIT_FAILURE);
-	} else {
-		if (game_running || amount_players == MAX_PLAYERS ) {
-                        mess.code=C_REFUSE;
-                        strcpy(mess.payload,M_CONN_REFUSE);
-			send_message(mess, new_cl_socket);
+    int new_cl_socket;
+    int cl_addr_length = sizeof(struct sockaddr_in);
+    if ((new_cl_socket = accept(server_socket, (struct sockaddr *)cl_addr, (socklen_t*) &cl_addr_length)) < 0) {
+        perror("Connection error");
+        exit(EXIT_FAILURE);
+    } else {
+        if (game_running || amount_players == MAX_PLAYERS ) {
+            mess.code=C_REFUSE;
+            strcpy(mess.payload,M_CONN_REFUSE);
+            send_message(mess, new_cl_socket);
 
-		} else {
-                        printf("A client has connected\n");
-                        players[amount_players++].socket = new_cl_socket;
-                        if (amount_players == 1) 
-                            alarm(COUNTDOWN);
-                        mess.code=C_OK;
-                        strcpy(mess.payload, M_GREET_CLIENT);
-                        send_message(mess,new_cl_socket);
-                }
+        } else {
+            printf("A client has connected\n");
+            players[amount_players++].socket = new_cl_socket;
+            if (amount_players == 1) 
+                alarm(COUNTDOWN);
+            mess.code=C_OK;
+            strcpy(mess.payload, M_GREET_CLIENT);
+            send_message(mess,new_cl_socket);
         }
+    }
 }
 /**
  *
@@ -147,29 +141,28 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
  * @param message mesRecv : the message structure (see message.h) sent by the client containing his name.
  *
  */
-
 void add_player(int socket, message mesRecv) {
-        int idx_player = find_player_id_by_socket(socket);
-        if(idx_player ==-1){
-            mess.code=C_SERVER_ERROR;
-            strcpy(mess.payload, M_SERVER_ERROR);
-            fprintf(stderr, "The server couldn't bind the socket with a player\n");
-            send_message(mess, socket);
-            return;
-        }
-        players[idx_player].is_registered=TRUE;
-        strcpy(players[idx_player].name, mesRecv.payload);
-        mess.code=C_OK;
-        strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
+    int idx_player = find_player_id_by_socket(socket);
+    if(idx_player ==-1){
+        mess.code=C_SERVER_ERROR;
+        strcpy(mess.payload, M_SERVER_ERROR);
+        fprintf(stderr, "The server couldn't bind the socket with a player\n");
         send_message(mess, socket);
-        printf("Player %s has joined the lobby\n", players[idx_player].name);
-        printf("Current players :\n");
-        for(int i =0; i < amount_players ; i++){
-            if(players[i].is_registered)
-                printf("Player number %i : %s is registered \n",i, players[i].name);
-            else
-                printf("Player number %i : is not registered yet\n", i);
-        }
+        return;
+    }
+    players[idx_player].is_registered=TRUE;
+    strcpy(players[idx_player].name, mesRecv.payload);
+    mess.code=C_OK;
+    strcpy(mess.payload, M_SIGNUP_CLIENT_OK);
+    send_message(mess, socket);
+    printf("Player %s has joined the lobby\n", players[idx_player].name);
+    printf("Current players :\n");
+    for(int i =0; i < amount_players ; i++){
+        if(players[i].is_registered)
+            printf("Player number %i : %s is registered \n",i, players[i].name);
+        else
+            printf("Player number %i : is not registered yet\n", i);
+    }
 }
 /**
  *
@@ -177,15 +170,16 @@ void add_player(int socket, message mesRecv) {
  *
  * @param int socket : the client socket's file descriptor
  *
+ * @return : the player index or -1 if not found
+ *
  */
 int find_player_id_by_socket(int socket){
     for(int j = 0; j < MAX_PLAYERS; j++){
         if(players[j].socket == socket)
-                return j;
+            return j;
     }
     return -1;
 }
-
 /**
  *
  * This function clean up all the players data in the players array
@@ -193,10 +187,10 @@ int find_player_id_by_socket(int socket){
  *
  */
 void reset_players(){
-        for(int  i=0; i < MAX_PLAYERS; i++){
-            reset_player(&players[i]);
-        }
-        amount_players=0;
+    for(int  i=0; i < MAX_PLAYERS; i++){
+        reset_player(&players[i]);
+    }
+    amount_players=0;
 }
 /**
  *
@@ -209,7 +203,6 @@ void reset_player(player *pl){
     pl->name[0]='\0';
     pl->is_registered=FALSE;
 }
-
 /**
  *
  * This function clean up server data before shutting down (and notice the connected clients)
@@ -217,14 +210,13 @@ void reset_player(player *pl){
  *
  */
 void shutdown_server() {
-        
-        sprintf(mess.payload,"The server has shut down\n");
-        mess.code=C_SERVER_SHUT_DOWN;
-        send_message_everybody(mess);
-	printf("server shutting down ..\n");
-	clear_lobby();
-        kill_ipcs();
-        server_running = FALSE;
+    sprintf(mess.payload,"The server has shut down\n");
+    mess.code=C_SERVER_SHUT_DOWN;
+    send_message_everybody(mess);
+    printf("server shutting down ..\n");
+    clear_lobby();
+    kill_ipcs();
+    server_running = FALSE;
 }
 /**
  *
@@ -232,8 +224,6 @@ void shutdown_server() {
  *
  *
  */
-
-
 void clear_lobby() {
     for(int i=0; i < amount_players; i++){
         shutdown_socket(players[i].socket);
@@ -248,7 +238,7 @@ void clear_lobby() {
  *
  *
  */
-int all_players_registered(){
+boolean  all_players_registered(){
     for(int i=0; i < amount_players; i++){
         if(!players[i].is_registered)
             return FALSE;
@@ -364,7 +354,6 @@ void start_game() {
  * This function launches a new round. It initalizes deck, shuffles it, finds papayoo, deals cards.
  *
  */
-
 void start_round() {
     init_deck();
     shuffle_deck();
@@ -415,13 +404,13 @@ void init_shared_memory(){
     }
     //DEBUG
     /*
-    char names[MAX_PLAYERS][BUFFER_SIZE];
-    int scores[MAX_PLAYERS];
-    s_read_names((char **)names);
-    s_read_scores((int **) scores);
-    for(i =0; i < amount_players; i++){
-        printf("NOM %s // score %i \n", names[i], scores[i]);
-    }*/
+       char names[MAX_PLAYERS][BUFFER_SIZE];
+       int scores[MAX_PLAYERS];
+       s_read_names((char **)names);
+       s_read_scores((int **) scores);
+       for(i =0; i < amount_players; i++){
+       printf("NOM %s // score %i \n", names[i], scores[i]);
+       }*/
 }
 /**
  *
@@ -429,40 +418,39 @@ void init_shared_memory(){
  *
  */
 void init_deck(){
-        unsigned int i;
-        char buffer[BUFFER_SIZE];
-        for(i=1; i <=10 ; i++){
-		card newCard; // creating new card instance;
-                newCard.number=i;
-                newCard.type =  SPADES_CONST;
-                show_card(newCard, buffer);
-                add_card(newCard);
-        }
-        for(i=1; i <=10 ; i++){
-		card newCard; // creating new card instance;
-                newCard.number=i;
-                newCard.type = CLUBS_CONST;
-                add_card(newCard);
-        }
-        for(i=1; i <=10 ; i++){
-		card newCard; // creating new card instance;
-                newCard.number=i;
-                newCard.type= HEARTS_CONST;
-                add_card(newCard);
-        }
-        for(i=1; i <=10 ; i++){
-		card newCard; // creating new card instance;
-                newCard.number=i;
-                newCard.type= DIAMONDS_CONST;
-                add_card(newCard);
-        }
-        for(i=1; i <=20 ; i++){
-		card newCard; // creating new card instance;
-                newCard.number=i;
-                newCard.type= PAYOO_CONST;
-                add_card(newCard);
-        }
-
+    unsigned int i;
+    char buffer[BUFFER_SIZE];
+    for(i=1; i <=10 ; i++){
+        card newCard; // creating new card instance;
+        newCard.number=i;
+        newCard.type =  SPADES_CONST;
+        show_card(newCard, buffer);
+        add_card(newCard);
+    }
+    for(i=1; i <=10 ; i++){
+        card newCard; // creating new card instance;
+        newCard.number=i;
+        newCard.type = CLUBS_CONST;
+        add_card(newCard);
+    }
+    for(i=1; i <=10 ; i++){
+        card newCard; // creating new card instance;
+        newCard.number=i;
+        newCard.type= HEARTS_CONST;
+        add_card(newCard);
+    }
+    for(i=1; i <=10 ; i++){
+        card newCard; // creating new card instance;
+        newCard.number=i;
+        newCard.type= DIAMONDS_CONST;
+        add_card(newCard);
+    }
+    for(i=1; i <=20 ; i++){
+        card newCard; // creating new card instance;
+        newCard.number=i;
+        newCard.type= PAYOO_CONST;
+        add_card(newCard);
+    }
 }
 /**
  *
@@ -471,18 +459,18 @@ void init_deck(){
  *
  */
 void shuffle_deck(){
-	srand((unsigned int)time(NULL)); // getting seed for random number
-        int count=0;	
+    srand((unsigned int)time(NULL)); // getting seed for random number
+    int count=0;	
 
-	while(count <= SHUFFLE_CONST) { 
-                count++;
-		int idx1 = rand() % deck_logical_size;
-		int idx2 = rand() % deck_logical_size; 
-                card temp_card;
-                memcpy(&temp_card, &deck[idx1], sizeof(card));
-                memcpy(&deck[idx1], &deck[idx2], sizeof(card));
-                memcpy(&deck[idx2], &temp_card, sizeof(card));
-	}
+    while(count <= SHUFFLE_CONST) { 
+        count++;
+        int idx1 = rand() % deck_logical_size;
+        int idx2 = rand() % deck_logical_size; 
+        card temp_card;
+        memcpy(&temp_card, &deck[idx1], sizeof(card));
+        memcpy(&deck[idx1], &deck[idx2], sizeof(card));
+        memcpy(&deck[idx2], &temp_card, sizeof(card));
+    }
 }
 /**
  *
@@ -492,10 +480,10 @@ void shuffle_deck(){
  *
  */
 card add_card(card newCard){
-	if(deck_logical_size == DECK_PHYSICAL_SIZE){ // deck is full
-		fprintf(stderr, "Error during add_card, deck full.\n");
-	}
-	memcpy(&deck[deck_logical_size++],&newCard, sizeof(card)); // adds card then increments logical size
+    if(deck_logical_size == DECK_PHYSICAL_SIZE){ // deck is full
+        fprintf(stderr, "Error during add_card, deck full.\n");
+    }
+    memcpy(&deck[deck_logical_size++],&newCard, sizeof(card)); // adds card then increments logical size
 }
 /**
  *
@@ -545,41 +533,40 @@ void show_card(card cardToShow, char * display){
 }
 /**
  *
- * This function finds randomly the type of the papayoo for the next round
+ * This function finds randomly the type of the papayoo for the next round and notices all players
  *
  */
 void find_papayoo(){
-        papayoo = rand() % 4; 
-        mess.code=C_INFO;
-        char buffer[BUFFER_SIZE];
-        switch(papayoo){
-            case SPADES_CONST:
-                sprintf(buffer,"PAPAYOO is %s\n", SPADES);
-                printf("%s\n", buffer);
-                strcpy(mess.payload, buffer);
-                send_message_everybody(mess);
-                break;
-            case HEARTS_CONST:
-                sprintf(buffer,"PAPAYOO is %s\n", HEARTS);
-                printf("%s\n", buffer);
-                strcpy(mess.payload, buffer);
-                send_message_everybody(mess);
-                break;
-            case CLUBS_CONST:
-                sprintf(buffer,"PAPAYOO is %s\n", CLUBS);
-                printf("%s\n", buffer);
-                strcpy(mess.payload, buffer);
-                send_message_everybody(mess);
-                break;
-            case DIAMONDS_CONST:
-                sprintf(buffer,"PAPAYOO is %s\n", DIAMONDS);
-                printf("%s\n", buffer);
-                strcpy(mess.payload, buffer);
-                send_message_everybody(mess);
-                break;
-            default:
-                fprintf(stderr,"Error choosing papayoo\n");
-                exit(EXIT_FAILURE);
-         }
-
+    papayoo = rand() % 4; 
+    mess.code=C_INFO;
+    char buffer[BUFFER_SIZE];
+    switch(papayoo){
+        case SPADES_CONST:
+            sprintf(buffer,"PAPAYOO is %s\n", SPADES);
+            printf("%s\n", buffer);
+            strcpy(mess.payload, buffer);
+            send_message_everybody(mess);
+            break;
+        case HEARTS_CONST:
+            sprintf(buffer,"PAPAYOO is %s\n", HEARTS);
+            printf("%s\n", buffer);
+            strcpy(mess.payload, buffer);
+            send_message_everybody(mess);
+            break;
+        case CLUBS_CONST:
+            sprintf(buffer,"PAPAYOO is %s\n", CLUBS);
+            printf("%s\n", buffer);
+            strcpy(mess.payload, buffer);
+            send_message_everybody(mess);
+            break;
+        case DIAMONDS_CONST:
+            sprintf(buffer,"PAPAYOO is %s\n", DIAMONDS);
+            printf("%s\n", buffer);
+            strcpy(mess.payload, buffer);
+            send_message_everybody(mess);
+            break;
+        default:
+            fprintf(stderr,"Error choosing papayoo\n");
+            exit(EXIT_FAILURE);
+    }
 }
