@@ -109,6 +109,16 @@ int main(int argc , char *argv[])
         shutdown_server();
 	return EXIT_SUCCESS;
 }
+/**
+ *
+ * This function allows the server to connect to a client. After a client has connected, his socket file descriptor is kept in the players array. One the client has been added, is not registered yet. If the game is running or the maximum amout of players is reached, the client will be refused.
+ *
+ * @param int server_socket : the socket's file descriptor of the server
+ *
+ * @param struct sockaddr_in : an empty  sockaddr_in structure 
+ *
+ *
+ */
 void add_client(int server_socket, struct sockaddr_in *cl_addr) {
 	int new_cl_socket;
 	int cl_addr_length = sizeof(struct sockaddr_in);
@@ -132,7 +142,15 @@ void add_client(int server_socket, struct sockaddr_in *cl_addr) {
                 }
         }
 }
-
+/**
+ *
+ * This function is called whenever a connected lient want to register for a game using his name.
+ *
+ * @param int socket : the socket's file descriptor of the connected client
+ *
+ * @param message mesRecv : the message structure (see message.h) sent by the client containing his name.
+ *
+ */
 
 void add_player(int socket, message mesRecv) {
         int idx_player = find_player_id_by_socket(socket);
@@ -156,9 +174,14 @@ void add_player(int socket, message mesRecv) {
             else
                 printf("Player number %i : is not registered yet\n", i);
         }
-        if(amount_players >=2 && all_players_registered())
-            start_game();
 }
+/**
+ *
+ * This function find the index of the player in the players array using his socket's file descriptor
+ *
+ * @param int socket : the client socket's file descriptor
+ *
+ */
 int find_player_id_by_socket(int socket){
     for(int j = 0; j < MAX_PLAYERS; j++){
         if(players[j].socket == socket)
@@ -167,19 +190,36 @@ int find_player_id_by_socket(int socket){
     return -1;
 }
 
-
+/**
+ *
+ * This function clean up all the players data in the players array
+ *
+ *
+ */
 void reset_players(){
         for(int  i=0; i < MAX_PLAYERS; i++){
             reset_player(&players[i]);
         }
         amount_players=0;
 }
+/**
+ *
+ * This function clean up a single player data.
+ *
+ *
+ */
 void reset_player(player *pl){
     pl->socket=0;
     pl->name[0]='\0';
     pl->is_registered=FALSE;
 }
 
+/**
+ *
+ * This function clean up server data before shutting down (and notice the connected clients)
+ *
+ *
+ */
 void shutdown_server() {
         
         sprintf(mess.payload,"The server has shut down\n");
@@ -190,7 +230,12 @@ void shutdown_server() {
         kill_ipcs();
         server_running = FALSE;
 }
-
+/**
+ *
+ * This function clean the client's sockets, clean up the players' data and stop the running game.
+ *
+ *
+ */
 
 
 void clear_lobby() {
@@ -200,6 +245,13 @@ void clear_lobby() {
     reset_players();
     game_running=FALSE;
 }
+/**
+ * This function aims to say if all the connected clients have registered (using their names)
+ *
+ * @return int : TRUE if all clients have registered, FALSE else
+ *
+ *
+ */
 int all_players_registered(){
     for(int i=0; i < amount_players; i++){
         if(!players[i].is_registered)
@@ -207,7 +259,14 @@ int all_players_registered(){
     }
     return TRUE;
 }
-
+/**
+ *
+ * This function remove a single player from the game . It handles whether a game is running (stops it and notice other players) or not.
+ *
+ * @param int socket : the socket's file descriptor of the player to remove
+ *
+ *
+ */
 
 void remove_player( int socket) {
     char namePl[255];
@@ -238,8 +297,14 @@ void remove_player( int socket) {
         clear_lobby();
     }
 }
-
-
+/**
+ *
+ * This function is called whenever a SIGALRM signal is caught, it aims to prevent the server to systematically refusing more than 2 players
+ *
+ * @param int signum: the caught  signal number (always SIGALRM)
+ *
+ *
+ */
 void alarm_handler(int signum) {
     if(game_running)
         return;
@@ -258,6 +323,15 @@ void alarm_handler(int signum) {
         start_game();
     }
 }
+/**
+ *
+ * This function is called whenever a SIGINT, SIGQUIT OR SIGTERM signal is caught. It aims to shutdown the server cleanly.
+ *
+ * @param int signum : the caught signal number
+ *
+ *
+ *
+ */
 void interrupt_handler(int signum) {
     switch(signum){
         case SIGINT:
@@ -276,6 +350,11 @@ void interrupt_handler(int signum) {
     shutdown_socket(server_socket);
     shutdown_server();
 }
+/**
+ * This function aims launch a new game when all the clients have registered and the minimum amount of players is reached. It notices all players , initialize shared memory and start the first round.
+ *
+ *
+ */
 void start_game() {
     printf("A game is starting with %i players.\n", amount_players);
     sprintf(mess.payload,"The Game starts now !\n Amount of players in the game : %i\n May the best win !\n", amount_players);
@@ -284,7 +363,11 @@ void start_game() {
     init_shared_memory();
     start_round();
 }
-
+/**
+ * 
+ * This function launches a new round. It initalizes deck, shuffles it, finds papayoo, deals cards.
+ *
+ */
 
 void start_round() {
     init_deck();
@@ -292,7 +375,11 @@ void start_round() {
     find_papayoo();
     deal_cards();
 }
-
+/**
+ *
+ * This function is called after the whole deck is shuffled and split it between all players.
+ *
+ */
 void deal_cards() {
     mess.code=C_INIT_DECK_RECEIVED;
     int amount_cards_player= DECK_PHYSICAL_SIZE/amount_players;
@@ -306,13 +393,24 @@ void deal_cards() {
         send_message(mess, players[i].socket);
     }
 }
-
+/**
+ *
+ * This function is used to send a message to every connected clients.
+ *
+ * @param message msg : the message structure (see message.h) to send
+ */
 void send_message_everybody(message msg){
     for(int i=0; i < amount_players; i++){
         send_message(msg, players[i].socket);
     }
 }
-
+/**
+ *
+ * This function reset scores and writes every players' name contained in the players array in shared memory
+ *
+ *
+ *
+ */
 void init_shared_memory(){
     int i;
     for(i=0; i < amount_players ; i++){
@@ -329,8 +427,11 @@ void init_shared_memory(){
         printf("NOM %s // score %i \n", names[i], scores[i]);
     }*/
 }
-
-/* Initializes the deck with all 52 possible values in order */
+/**
+ *
+ * This function initializes the deck (still ordered)
+ *
+ */
 void init_deck(){
         unsigned int i;
         char buffer[BUFFER_SIZE];
@@ -367,14 +468,17 @@ void init_deck(){
         }
 
 }
-
-/* Shuffles all remaining cards in the deck  */
+/**
+ *
+ * This function shuffle the deck, the SHUFFLE_CONST can be incremented to raise entropy
+ *
+ *
+ */
 void shuffle_deck(){
 	srand((unsigned int)time(NULL)); // getting seed for random number
         int count=0;	
 
-	// running through all cards in deck and placing them in random spots in temp deck
-	while(count <= SHUFFLE_CONST) { // as long as we've not placed all cards into the new array
+	while(count <= SHUFFLE_CONST) { 
                 count++;
 		int idx1 = rand() % deck_logical_size;
 		int idx2 = rand() % deck_logical_size; 
@@ -384,16 +488,28 @@ void shuffle_deck(){
                 memcpy(&deck[idx2], &temp_card, sizeof(card));
 	}
 }
-
-
-/* Adds one card to the logical end of the deck (bottom of the stack). Returns the added card if the operation was successful. */
+/**
+ *
+ * This function is used to add a card at the bottom of the deck (only used during initialization)
+ *
+ * @param card newCard : the card to add to the deck
+ *
+ */
 card add_card(card newCard){
 	if(deck_logical_size == DECK_PHYSICAL_SIZE){ // deck is full
 		fprintf(stderr, "Error during add_card, deck full.\n");
 	}
 	memcpy(&deck[deck_logical_size++],&newCard, sizeof(card)); // adds card then increments logical size
 }
-
+/**
+ *
+ * This function show every cards of the deck, only used for debugging in the server side.
+ *
+ * @param cards* deck : the deck to show
+ * 
+ * @param int logical_size : logical size of the deck to show
+ *
+ */
 void show_cards(card* deck, int logical_size){
     char display[BUFFER_SIZE];
     for(int i = 0; i < logical_size; i++){
@@ -401,7 +517,14 @@ void show_cards(card* deck, int logical_size){
         printf("CARD %i : %s\n",i+1, display);
     }
 }
-
+/**
+ *
+ * This functions shows a single card (only used for debugging in the server side)
+ * @param card cardToShow : the card to show
+ *
+ * @param char *display : the buffer to put the information of the card.
+ *
+ */
 void show_card(card cardToShow, char * display){
     switch(cardToShow.type){
         case SPADES_CONST:

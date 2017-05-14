@@ -8,7 +8,7 @@
 #define SERVEUR_H
 #include "socket.h"
 
-#define COUNTDOWN 10 
+#define COUNTDOWN 30 //Countdown to wait to start the game during lobby registration
 #define SERVER_LOCK "./server.lock"
 typedef void (*fct_ptr)( );
 typedef struct player {
@@ -33,10 +33,10 @@ void start_game(); //starts the game
 void deal_cards(); //shuffles the deck and deals cards to all players
 void start_round(); //starts a new round
 void init_shared_memory();//used to put the players names and reset scores and cards in shared memory
-void init_deck();
-void shuffle_deck();
-card add_card(card);
-void show_cards(card *, int);
-void show_card(card cardToShow, char *);
-void find_papayoo();
+void init_deck();//used to initialize the whole deck
+void shuffle_deck();//used to shuffle the whole deck
+card add_card(card);//used to add a card in the whole deck during initialization
+void show_cards(card *, int);//used to show cards : debug only (this function is used only client side)
+void show_card(card cardToShow, char *);//used to show a single card : debu only (this function is only client side)
+void find_papayoo();//used to find the type of the papayoo for the next round (randomly) and notificate all the players once chosen
 #endif
