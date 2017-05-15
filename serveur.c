@@ -12,7 +12,9 @@ static message mess;
 static struct timeval timeout = {0, 200000};//time to wait to recv essage before cancelling the operation (here 200 ms)
 static card deck[DECK_PHYSICAL_SIZE];
 static int deck_logical_size = 0;
-
+static boolean one_ecart_received = FALSE;
+static int amount_ecart_received=0;
+static ecart ecarts_received[MAX_PLAYERS];
 int main(int argc , char *argv[]){
     FILE *fpError;
     struct sigaction alarm, interrupt;
@@ -20,7 +22,7 @@ int main(int argc , char *argv[]){
     fd_set fds;
     struct sockaddr_in server_addr, client_addr;
     int fdLock = open(SERVER_LOCK, O_RDWR);
-    fct_ptr dispatcher[] = {add_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
     if (fdLock == -1) { 
         perror("Erreur ouverture fichier lock\n");
         exit(EXIT_FAILURE);
@@ -86,6 +88,8 @@ int main(int argc , char *argv[]){
                 }
             }
         }
+        if(one_ecart_received && amount_ecart_received == amount_players)
+            send_ecart_back();
         if(game_running){
         }
     }
@@ -179,6 +183,43 @@ int find_player_id_by_socket(int socket){
             return j;
     }
     return -1;
+}
+/**
+ *
+ * This function is used to receive a deck of 5 cards from a player (an ecart).
+ *
+ * @param int socket : the socket's file descriptor of the player sending his ecart
+ * @param message msg : the message structure containing the 5 cards
+ *
+ *
+ */
+void receive_ecart_from_player(int socket, message msg){
+    int player_id = find_player_id_by_socket(socket);
+    one_ecart_received = TRUE;
+    amount_ecart_received++;
+    for(int i=0; i < 5; i++){
+        memcpy(&ecarts_received[player_id].cards[i], &msg.deck[i], sizeof(card));
+    }
+    show_cards(ecarts_received[player_id].cards, 5);
+}
+
+/**
+ *
+ * This function is used to send back the differents ecarts to the players, after they all have been sent.
+ *
+ *
+ */
+void send_ecart_back(){
+    mess.code = C_ALL_ECART_DECK_RECEIVED;
+    mess.deck_logical_size = 5;
+    for(int i =0; i < amount_players ; i++){
+        for(int j=0; j < 5 ; j++){
+            memcpy(&mess.deck[j], &ecarts_received[i].cards[j], sizeof(card));
+        }
+        send_message(mess, players[(i+1)%amount_players].socket);
+    }
+    one_ecart_received=FALSE;
+    amount_ecart_received=0;
 }
 /**
  *

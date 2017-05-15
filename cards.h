@@ -23,4 +23,7 @@ typedef struct card{
 	unsigned int number;
         card_const type;
 } card;
+typedef struct ecart{
+    card cards[5];
+} ecart;
 #endif

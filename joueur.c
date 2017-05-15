@@ -13,6 +13,9 @@ static int socketC; // The socket used to communicate with the server (file desc
 static int deck_logical_size;// the logical size of the player's deck
 static card deck[DECK_PHYSICAL_SIZE/2];// the player's deck
 static boolean waiting_for_ecart = FALSE;//used after sending ecart and waiting for server to giving own ecart to player
+static char players_names[MAX_PLAYERS][BUFFER_SIZE];//used to read names from shared memory
+static int scores[MAX_PLAYERS];//used to read scores from shared memory
+static int player_id;//id of the current player
 int main(int argc , char *argv[]){
     struct sigaction interrupt;
     interrupt.sa_handler = &interrupt_handler;
@@ -51,6 +54,9 @@ int main(int argc , char *argv[]){
                 case C_INIT_DECK_RECEIVED:
                     init_deck(mRecv.deck, mRecv.deck_logical_size);
                     break;
+                case C_ALL_ECART_DECK_RECEIVED:
+                    add_new_ecart(mRecv.deck, mRecv.deck_logical_size);
+                    break;
                 default:
                     continue;
             }
@@ -74,6 +80,25 @@ void init_deck(card * cards_sent, int cards_sent_size){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
     send_ecart(socketC);
+}
+/**
+ *
+ * This function is used to get the ecart given by another player to the deck.
+ *
+ * @param card * cards_sent : the ecart sent
+ *
+ * @param int cards_sent_size : the size of the ecart (normally 5)
+ *
+ */
+void add_new_ecart(card * cards_sent, int cards_sent_size){
+    printf("Here are the cards sent by player TO DO \n");
+    show_cards(cards_sent, cards_sent_size);
+    for(int i=0; i < cards_sent_size; i++){
+        memcpy(&deck[deck_logical_size++], &cards_sent[i], sizeof(card));
+    }
+printf("Here is your complete deck for the round : \n");
+    show_cards(deck, deck_logical_size);
+    waiting_for_ecart = FALSE;
 }
 /**
  *
@@ -114,7 +139,7 @@ void send_ecart(int client_socket){
     printf("You've chosen the followin cards\n Sending to server ...\n");
     show_cards(mSent.deck, mSent.deck_logical_size);
     remove_ecart(array_ints);
-    //send_message(mSent, client_socket);
+    send_message(mSent, client_socket);
     waiting_for_ecart = TRUE;
 }
 /**
