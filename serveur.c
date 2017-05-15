@@ -402,7 +402,7 @@ void init_shared_memory(){
         s_write_score(i,0);
         s_write_name(i, players[i].name);
     }
-    //DEBUG
+    //DEBUG : READ IN SHARED MEMORY
     /*
        char names[MAX_PLAYERS][BUFFER_SIZE];
        int scores[MAX_PLAYERS];
@@ -424,7 +424,6 @@ void init_deck(){
         card newCard; // creating new card instance;
         newCard.number=i;
         newCard.type =  SPADES_CONST;
-        show_card(newCard, buffer);
         add_card(newCard);
     }
     for(i=1; i <=10 ; i++){

@@ -11,7 +11,8 @@ static char server_ip[20]; // The server's IP address (127.0.0.1 for testing)
 static int port; // The server's port
 static int socketC; // The socket used to communicate with the server (file descriptor)
 static int deck_logical_size;// the logical size of the player's deck
-static card deck[DECK_PHYSICAL_SIZE];// the player's deck
+static card deck[DECK_PHYSICAL_SIZE/2];// the player's deck
+static boolean waiting_for_ecart = FALSE;//used after sending ecart and waiting for server to giving own ecart to player
 int main(int argc , char *argv[]){
     struct sigaction interrupt;
     interrupt.sa_handler = &interrupt_handler;
@@ -54,6 +55,10 @@ int main(int argc , char *argv[]){
                     continue;
             }
         }
+        if(waiting_for_ecart){
+            printf("ALL players haven't sent their ecart yet. Please Wait ...\n Next check in %i seconds\n", TIME_TRY_CONNECT);
+            sleep(TIME_TRY_CONNECT);
+        }
     }
     return EXIT_SUCCESS;
 }
@@ -68,50 +73,71 @@ void init_deck(card * cards_sent, int cards_sent_size){
     for(int i=0; i < deck_logical_size ;i++){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
-    send_and_receive_ecart(socketC);
+    send_ecart(socketC);
 }
 /**
  *
  * This function is used to allow the player to choose 5 cards to give to another player at the beginning of a round. The cards will be chosen and then sent to the server that will give them to another player.
  * 
  */
-static int array_ints[5];
-static char buffer[BUFFER_SIZE] = "12 1 2 5 6 7\n";
-void send_and_receive_ecart(int client_socket){
+void send_ecart(int client_socket){
+    int *array_ints;
+    char buffer[BUFFER_SIZE];
+    if( (array_ints = (int *) malloc(sizeof(int)*5)) == NULL){
+        fprintf(stderr, "Erreur malloc\n");
+        exit(EXIT_FAILURE);
+    }
     show_cards(deck, deck_logical_size);
     printf("Here are your cards, please choose 5 for ecart (type in the cards number with space betwen them)\n");
     int ecart_ok=FALSE;
     while(TRUE){
-        if(convert_input_to_integer_array(buffer,(int **)&array_ints))
-            break;
-        /*
-           if( fgets(buffer, BUFFER_SIZE, stdin)!= NULL){
-           printf("%s\n", buffer);
-           if(convert_input_to_integer_array(buffer, &array_ints))
-           break;
-           else
-           printf("Please choose 5 card number from 1 to %i\n",deck_logical_size);
-           }
-           */
+        int ret;
+        if( (ret=read(0, buffer, BUFFER_SIZE))==-1){
+            fprintf(stderr, "Erreur read stdin\n");
+            exit(EXIT_FAILURE);
+        }
+        else{
+            buffer[ret-1]='\0';
+            if(convert_input_to_integer_array(buffer, &array_ints))
+                break;
+            else
+                printf("Please choose 5 card number from 1 to %i\n",deck_logical_size);
+        }
     }
     //copying chosen carts in the array of cards to send to server
-    for(int i=0; i< 5;i++){
-    memcpy(&mSent.deck[array_ints[i]], &deck[array_ints[i]], sizeof(card));
+    int i;
+    for(i=0; i< 5;i++){
+        memcpy(&mSent.deck[i], &deck[array_ints[i]], sizeof(card));
     }
     mSent.deck_logical_size=5;
     mSent.code=C_ECART_DECK_SENT;
+    printf("You've chosen the followin cards\n Sending to server ...\n");
     show_cards(mSent.deck, mSent.deck_logical_size);
-    /*
-    send_message(mSent, client_socket);
-    receive_message(&mRecv, client_socket);
-    while(mRecv.code != C_ALL_ECART_DECK_RECEIVED){
-    printf("All players haven't sent their ecart. Please wait\n Next check in %i seconds\n", TIME_TRY_CONNECT);
-    sleep(TIME_TRY_CONNECT);
-    receive_message(&mRecv, client_socket);
+    for(i =0; i < 5 ; i++){
+        remove_card(array_ints[i]-i);
     }
-    printf("You've received your ecart :\n");
-    show_cards(mRecv.deck, mRecv.deck_logical_size);
-    */
+    printf("deck after delete\n");
+    show_cards(deck, deck_logical_size);
+    //send_message(mSent, client_socket);
+    waiting_for_ecart = TRUE;
+}
+/**
+ *
+ * This function removes a card from the deck.
+ *
+ * @param int index : the index of the card to remove
+ *
+ */
+void remove_card(int index){
+    printf("index %i\n", index);
+    if(index <0 || index >= deck_logical_size){
+        fprintf(stderr,"Wrong index\n");
+        exit(EXIT_FAILURE);
+    }
+    for(int i = index ; i < deck_logical_size -1 ; i++){
+        memcpy(&deck[i], &deck[i+1], sizeof(card));
+    }
+    deck_logical_size--;
 }
 /**
  *
@@ -125,27 +151,24 @@ void send_and_receive_ecart(int client_socket){
  *
  */
 boolean convert_input_to_integer_array(char * input, int ** array){
-    printf("DEBUG %s\n", input);
     char *numberS;
     int number;
     int number_typed_in=0;
     char seps[] = ",\t\n ";
     numberS = strtok(input, seps);
-    printf("ici\n");
     number = atoi(numberS);
-    printf("ici 2 %i \n", number);
-    if(number <=1 || number >= deck_logical_size)
+    if(number <1 || number > deck_logical_size)
         return FALSE;
-    *array[number_typed_in++] = number-1;
-    printf("la");/*
+    (*array)[number_typed_in++] = number-1;
     while((numberS = strtok(NULL, seps))!=NULL){
         number = atoi(numberS);
-        if(number <=1 || number >= deck_logical_size)
+        if(number <1 || number > deck_logical_size)
             return FALSE;
-        array[number_typed_in++] = number-1;
-        if(number_typed_in >5)
+        (*array)[number_typed_in++] = number-1;
+        if(number_typed_in >5){
             return FALSE;
-    }*/
+        }
+    }
     return TRUE;
 }
 
