@@ -21,7 +21,6 @@ static int shmid_rc;//the shmid identifier of the amount of reader (rc) stored i
  *
  */
 void s_read_scores(int **data){
-    void * ret = NULL;
     down(sem_id_mutex_rc);			// get exclusive access to rc
     *rc = *rc + 1;			// one more reader
     if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
@@ -41,7 +40,6 @@ void s_read_scores(int **data){
  *  @param char ** data : This is the array  of char * that is going to be filled with names' array.
  */
 void s_read_names(char **data){
-    void * ret = NULL;
     down(sem_id_mutex_rc);			// get exclusive access to rc
     *rc = *rc + 1;			// one more reader
     if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
@@ -61,7 +59,6 @@ void s_read_names(char **data){
  *  @param card ** data : This is the array  of card * that is going to be filled with cards' array.
  */
 void s_read_cards(card **data){
-    void * ret = NULL;
     down(sem_id_mutex_rc);			// get exclusive access to rc
     *rc = *rc + 1;			// one more reader
     if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
@@ -72,6 +69,27 @@ void s_read_cards(card **data){
     if(*rc == 0)
         up(sem_id_mutex_mem);	// if last reader
     up(sem_id_mutex_rc);			// release exclusive access to rc
+}
+/**
+ *
+ * This function is used to read the size of  current pli contained in the board var stored in shared memory. Access is protected with Courtois's semaphores algorithm.
+ *  Many users can read the s_mem data at once, but only one writer is allowed at once.
+ *
+ *  @return : The pli_size
+ */
+int s_read_cards_size(){
+    int pli_size;
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc + 1;			// one more reader
+    if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
+    up(sem_id_mutex_rc);			// release exclusive access to rc
+    pli_size = board->pli_size;
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc - 1;			// one less reader
+    if(*rc == 0)
+        up(sem_id_mutex_mem);	// if last reader
+    up(sem_id_mutex_rc);			// release exclusive access to rc
+    return pli_size;
 }
 /**
  *
@@ -113,17 +131,25 @@ void s_write_score(int idx, int data){
  *
  * This function is used to write a card at an known index in the array of cards stored in the board var (in shared memory)
  *
- * @param int idx : the index of the player
  *
  * @param card data : the card of the player
  */
-void s_write_card(int idx, card data){
-    if(idx<0 || idx >= MAX_PLAYERS){
-        fprintf(stderr, "Wrong index\n");
-        exit(EXIT_FAILURE);
-    }
+void s_write_card(card data){
+    int idx = s_read_cards_size();
     down(sem_id_mutex_mem);			// get exclusive access
     memcpy(&board->pli[idx],&data, sizeof(card));
+    board->pli_size = ++idx;
+    up(sem_id_mutex_mem);			// release exclusive access
+}
+/**
+ *
+ * This function is used to reset card size at an known index in the array of cards stored in the board var (in shared memory)
+ *
+ *
+ */
+void s_reset_card_size(){
+    down(sem_id_mutex_mem);			// get exclusive access
+    board->pli_size = 0;
     up(sem_id_mutex_mem);			// release exclusive access
 }
 /**

@@ -20,8 +20,9 @@ typedef enum card_const {SPADES_CONST, HEARTS_CONST, CLUBS_CONST, DIAMONDS_CONST
 
 /* This is the structure used to store a card in memory. A card is composed of a number from 1 to 10 , a suit which can take any of the four values defined above as constants and a color, which can take any of the two values defined by the above constants, as long as it matches the suit. */
 typedef struct card{
-	unsigned int number;
+	int number;
         card_const type;
+        int last_played;//index of the last player who played the card
 } card;
 typedef struct ecart{
     card cards[5];

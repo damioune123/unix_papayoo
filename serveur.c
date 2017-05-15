@@ -16,6 +16,7 @@ static boolean one_ecart_received = FALSE;
 static int amount_ecart_received=0;
 static ecart ecarts_received[MAX_PLAYERS];
 static int current_round=0;;
+static int current_player_turn=0;
 int main(int argc , char *argv[]){
     FILE *fpError;
     struct sigaction alarm, interrupt;
@@ -23,7 +24,7 @@ int main(int argc , char *argv[]){
     fd_set fds;
     struct sockaddr_in server_addr, client_addr;
     int fdLock = open(SERVER_LOCK, O_RDWR);
-    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player, receive_played_card};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
     if (fdLock == -1) { 
         perror("Erreur ouverture fichier lock\n");
         exit(EXIT_FAILURE);
@@ -55,6 +56,7 @@ int main(int argc , char *argv[]){
     init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
     create_segment();
     init_semaphores();
+    receive_played_card(0, mess);
     while(server_running){
         usleep(100); //top prevent cpu overheat
         FD_ZERO(&fds);
@@ -89,8 +91,11 @@ int main(int argc , char *argv[]){
                 }
             }
         }
-        if(one_ecart_received && amount_ecart_received == amount_players)
+        if(one_ecart_received && amount_ecart_received == amount_players){
             send_ecart_back();
+            ask_for_card(current_player_turn);
+        }
+            
         if(game_running){
         }
     }
@@ -581,4 +586,28 @@ void send_basic_info(){
         mess.info.player_index=i;
         send_message(mess, players[i].socket);
     }
+}
+/**
+ * 
+ * This function send a message to a player to ask him to send a card.
+ *
+ * @param int player_idx : the player's index to ask ask for card
+ *
+ */
+void ask_for_card(int player_idx){
+    mess.code = C_ASK_FOR_CARD;
+    send_message(mess,players[player_idx].socket);
+}
+
+/**
+ *
+ * This function is called when a player has played a card.
+ *
+ * @param int socket : socket's file descriptor of the player
+ *
+ * @param message msg : the message containing the played card
+ *
+ */
+void receive_played_card(int socket, message msg){
+
 }

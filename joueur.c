@@ -120,7 +120,7 @@ void show_info(){
             fprintf(stderr," Wrong papayoo const\n");
             exit(EXIT_FAILURE);
     }
-    printf("--------------------------------------------------\n");
+    printf("-------------------------------------------------------\n");
 }
 /**
  *

@@ -42,4 +42,6 @@ void find_papayoo();//used to find the type of the papayoo for the next round (r
 void receive_ecart_from_player(int, message); //used to receive an ecart from a player
 void send_ecart_back();//send ecart to player after all ecarts have been received
 void send_basic_info();//send the basic info to a player (amount_players, player index, papayoo)
+void ask_for_card(int);//ask a player to play a card
+void receive_played_card(int, message); //receive a played card from a player
 #endif
