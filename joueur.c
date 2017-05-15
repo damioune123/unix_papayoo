@@ -15,8 +15,7 @@ static card deck[DECK_PHYSICAL_SIZE/2];// the player's deck
 static boolean waiting_for_ecart = FALSE;//used after sending ecart and waiting for server to giving own ecart to player
 static char players_names[MAX_PLAYERS][BUFFER_SIZE];//used to read names from shared memory
 static int scores[MAX_PLAYERS];//used to read scores from shared memory
-static int player_id;//id of the current player
-static int amount_players; //aount of players in the game
+static basic_info info; //basic information : player index, amount_players, current round, papayoo
 int main(int argc , char *argv[]){
     struct sigaction interrupt;
     interrupt.sa_handler = &interrupt_handler;
@@ -58,6 +57,10 @@ int main(int argc , char *argv[]){
                 case C_ALL_ECART_DECK_RECEIVED:
                     add_new_ecart(mRecv.deck, mRecv.deck_logical_size);
                     break;
+                case C_BASIC_INFO:
+                    memcpy(&info, &mRecv.info,sizeof(basic_info));
+                    show_info();
+                    break;
                 default:
                     continue;
             }
@@ -80,22 +83,44 @@ void init_deck(card * cards_sent, int cards_sent_size){
     for(int i=0; i < deck_logical_size ;i++){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
-    amount_players = DECK_PHYSICAL_SIZE/cards_sent_size;
     send_ecart(socketC);
 }
 /**
  *
- * This function displays all the scores of the players (reading shared memory)
+ * This function displays all the basic information of the players (reading shared memory) (scores/names/current rount/papayoo)
  *
  *
  */
-void show_scores(){
+void show_info(){
     s_read_names((char**)players_names);
     s_read_scores((int **) scores);
+    printf("-------------------INFO REVIEW--------------------------\n");
     printf("Current scores :\n");
-    for(int i=0; i < amount_players ; i++){
-        printf("Name : %s | Score : %i\n", players_names[i], scores[i]);
+    for(int i=0; i < info.amount_players ; i++){
+        if(i==info.player_index)
+            printf("YOU : Name : %s | Score : %i\n", players_names[i], scores[i]);
+        else
+            printf("Name : %s | Score : %i\n", players_names[i], scores[i]);
     }
+    printf("Current round : %i\n", info.current_round);
+    switch(info.papayoo){
+        case SPADES_CONST:
+            printf("Papayoo is %s\n", SPADES);
+            break;
+        case HEARTS_CONST:
+            printf("Papayoo is %s\n", HEARTS);
+            break;
+        case DIAMONDS_CONST:
+            printf("Papayoo is %s\n", DIAMONDS);
+            break;
+        case CLUBS_CONST:
+            printf("Papayoo is %s\n", CLUBS);
+            break;
+        default:
+            fprintf(stderr," Wrong papayoo const\n");
+            exit(EXIT_FAILURE);
+    }
+    printf("--------------------------------------------------\n");
 }
 /**
  *
@@ -107,14 +132,14 @@ void show_scores(){
  *
  */
 void add_new_ecart(card * cards_sent, int cards_sent_size){
-    printf("Here are the cards sent by player TO DO \n");
+    printf("Here are the cards sent by player %s \n", players_names[(info.player_index+1)%info.amount_players]);
     show_cards(cards_sent, cards_sent_size);
     for(int i=0; i < cards_sent_size; i++){
         memcpy(&deck[deck_logical_size++], &cards_sent[i], sizeof(card));
     }
 printf("Here is your complete deck for the round : \n");
     show_cards(deck, deck_logical_size);
-    show_scores();
+    show_info();
     waiting_for_ecart = FALSE;
 }
 /**

@@ -55,6 +55,26 @@ void s_read_names(char **data){
 }
 /**
  *
+ * This function is used to read the array of cards of current pli contained in the board var stored in shared memory. Access is protected with Courtois's semaphores algorithm.
+ *  Many users can read the s_mem data at once, but only one writer is allowed at once.
+ *
+ *  @param card ** data : This is the array  of card * that is going to be filled with cards' array.
+ */
+void s_read_cards(card **data){
+    void * ret = NULL;
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc + 1;			// one more reader
+    if(*rc == 1) down(sem_id_mutex_mem);		// if first reader...
+    up(sem_id_mutex_rc);			// release exclusive access to rc
+    memcpy(data,board->pli, sizeof(board->pli));
+    down(sem_id_mutex_rc);			// get exclusive access to rc
+    *rc = *rc - 1;			// one less reader
+    if(*rc == 0)
+        up(sem_id_mutex_mem);	// if last reader
+    up(sem_id_mutex_rc);			// release exclusive access to rc
+}
+/**
+ *
  * This function is used to write a name at an known index in the array of names stored in the board var (in shared memory)
  *
  * @param int idx : the index of the player 
@@ -87,6 +107,23 @@ void s_write_score(int idx, int data){
     }
     down(sem_id_mutex_mem);			// get exclusive access
     board->scores[idx]=data;
+    up(sem_id_mutex_mem);			// release exclusive access
+}
+/**
+ *
+ * This function is used to write a card at an known index in the array of cards stored in the board var (in shared memory)
+ *
+ * @param int idx : the index of the player
+ *
+ * @param card data : the card of the player
+ */
+void s_write_card(int idx, card data){
+    if(idx<0 || idx >= MAX_PLAYERS){
+        fprintf(stderr, "Wrong index\n");
+        exit(EXIT_FAILURE);
+    }
+    down(sem_id_mutex_mem);			// get exclusive access
+    memcpy(&board->pli[idx],&data, sizeof(card));
     up(sem_id_mutex_mem);			// release exclusive access
 }
 /**

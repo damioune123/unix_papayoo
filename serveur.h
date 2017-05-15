@@ -41,4 +41,5 @@ void show_card(card cardToShow, char *);//used to show a single card : debu only
 void find_papayoo();//used to find the type of the papayoo for the next round (randomly) and notificate all the players once chosen
 void receive_ecart_from_player(int, message); //used to receive an ecart from a player
 void send_ecart_back();//send ecart to player after all ecarts have been received
+void send_basic_info();//send the basic info to a player (amount_players, player index, papayoo)
 #endif

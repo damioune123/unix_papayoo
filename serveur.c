@@ -15,6 +15,7 @@ static int deck_logical_size = 0;
 static boolean one_ecart_received = FALSE;
 static int amount_ecart_received=0;
 static ecart ecarts_received[MAX_PLAYERS];
+static int current_round=0;;
 int main(int argc , char *argv[]){
     FILE *fpError;
     struct sigaction alarm, interrupt;
@@ -395,9 +396,11 @@ void start_game() {
  *
  */
 void start_round() {
+    current_round++;
     init_deck();
     shuffle_deck();
     find_papayoo();
+    send_basic_info();
     deal_cards();
 }
 /**
@@ -563,34 +566,19 @@ void show_card(card cardToShow, char * display){
 }
 /**
  *
- * This function finds randomly the type of the papayoo for the next round and notices all players
+ * This function finds randomly the type of papayoo
  *
  */
 void find_papayoo(){
     papayoo = rand() % 4; 
-    mess.code=C_INFO;
-    char buffer[BUFFER_SIZE];
-    switch(papayoo){
-        case SPADES_CONST:
-            sprintf(buffer,"PAPAYOO is %s\n", SPADES);
-            printf("%s\n", buffer);
-            break;
-        case HEARTS_CONST:
-            sprintf(buffer,"PAPAYOO is %s\n", HEARTS);
-            printf("%s\n", buffer);
-            break;
-        case CLUBS_CONST:
-            sprintf(buffer,"PAPAYOO is %s\n", CLUBS);
-            printf("%s\n", buffer);
-            break;
-        case DIAMONDS_CONST:
-            sprintf(buffer,"PAPAYOO is %s\n", DIAMONDS);
-            printf("%s\n", buffer);
-            break;
-        default:
-            fprintf(stderr,"Error choosing papayoo\n");
-            exit(EXIT_FAILURE);
+}
+void send_basic_info(){
+    mess.code=C_BASIC_INFO;
+    mess.info.amount_players=amount_players;
+    mess.info.papayoo=papayoo;
+    mess.info.current_round=current_round;
+    for(int i=0; i < amount_players ; i++){
+        mess.info.player_index=i;
+        send_message(mess, players[i].socket);
     }
-    strcpy(mess.payload, buffer);
-    send_message_everybody(mess);
 }

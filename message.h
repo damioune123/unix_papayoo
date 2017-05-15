@@ -8,11 +8,18 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 #define MESSAGE_MAX_LENGTH 512
+typedef struct basic_info{
+    int player_index;
+    int amount_players;
+    card_const papayoo;
+    int current_round;
+} basic_info;
 typedef struct message {
     int code;
     char payload[MESSAGE_MAX_LENGTH];
     card deck[DECK_PHYSICAL_SIZE/2];
     int deck_logical_size;
+    basic_info info;
 } message;
 //server-> client
 //code
@@ -24,6 +31,7 @@ typedef struct message {
 #define C_SERVER_SHUT_DOWN 5
 #define C_INIT_DECK_RECEIVED 6
 #define C_ALL_ECART_DECK_RECEIVED 7
+#define C_BASIC_INFO 8
 
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"
