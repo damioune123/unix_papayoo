@@ -126,7 +126,7 @@ void send_ecart(int client_socket){
  * @param int *indexes : the indexes of the cards to remove
  *
  */
-void remove_ecart(int *indexes){
+void remove_cards(int *indexes){
     int *swap_unavailable;
     if( (swap_unavailable = (int *) malloc(sizeof(int)*5)) == NULL){
         fprintf(stderr, "Erreur malloc\n");
@@ -146,8 +146,6 @@ void remove_ecart(int *indexes){
         if(indexes[i]<deck_logical_size -6)
             memcpy(&deck[indexes[i]], &deck[find_swap(&swap_unavailable, &swap_size)], sizeof(card));
     }
-    //deck_logical_size-=5;
-
 
 }
 /**
@@ -172,7 +170,7 @@ int find_swap(int ** swap_unavailable, int * size){
             }
         }
         if(OK){
-            (*swap_unavailable)[*size++]=i;
+            (*swap_unaivalable)[*size++]=i;
                 return i;
             }
     }

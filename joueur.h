@@ -14,6 +14,7 @@ void show_cards(card *, int);//used to show an entier deck of cards
 void show_card(card cardToShow, char *);//used to show a single card
 void init_deck(card *, int);//used to init the deck of the player with cards sent by server
 void send_ecart();//used to ask player to remove 5 cards and sends them to the server for the "ecart"
-void remove_card(int); // to remove a card from the deck
+void remove_ecart(int*); // to remove the ecart from the deck
+int find_swap(int **, int *);//used to find swap candidate for card removal (only used by the remove_card function)
 boolean convert_input_to_integer_array(char *, int**);//convert the char * input to an array of integer; returns TRUE if all OK, FALSE else
 #endif
