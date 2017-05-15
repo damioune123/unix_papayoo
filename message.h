@@ -33,6 +33,7 @@ typedef struct message {
 #define C_ALL_ECART_DECK_RECEIVED 7
 #define C_BASIC_INFO 8
 #define C_ASK_FOR_CARD 9
+#define C_SHOW_PLI 10
 
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"

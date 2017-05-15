@@ -61,6 +61,12 @@ int main(int argc , char *argv[]){
                     memcpy(&info, &mRecv.info,sizeof(basic_info));
                     show_info();
                     break;
+                case ASK_FOR_CARD:
+                    play_card();
+                    break;
+                case SHOW_PLI:
+                    show_pli();
+                    break;
                 default:
                     continue;
             }
@@ -352,4 +358,44 @@ void show_card(card cardToShow, char * display){
             fprintf(stderr, "Wrong card const\n");
             exit(EXIT_FAILURE);
     }
+}
+/**
+ *
+ * This function asks the player to play a card and sends it to the server.
+ * The card is then remove from the player's deck
+ *
+ */
+void play_card(){
+    show_card(deck, deck_logical_size);
+    printf("Here above is your current deck, please choose a card to play\n");
+    int ret;
+    int card_idx;
+    char buffer[BUFFER_SIZE];
+    while(TRUE){
+        if( (ret = read(0, buffer, BUFFER_SIZE)) ==-1){
+            fprintf("Error read stdin\n");
+            exit(EXIT_FAILURE);
+        }
+        else{
+            buffer[ret-1]='\0';
+            card_idx = atoi(buffer);
+            if(card_idx>=1 && card_idx <=deck_logical_size)
+                break;
+        }
+    }
+    show_card(deck[--card_idx], buffer);
+    printf("You choose to play :\n%s", buffer);
+    deck[card_idx].last_played=info.player_index;
+    memcpy(&mSent.cards[0], &deck[card_idx], sizeof(card));
+    mSent.code=C_PLAY_CARD;
+    send_message(mSent, socketC);
+}
+/**
+ *
+ * This function shows the current pli.
+ *
+ *
+ */
+void show_pli(){
+
 }

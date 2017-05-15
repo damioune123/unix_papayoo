@@ -17,6 +17,8 @@ static int amount_ecart_received=0;
 static ecart ecarts_received[MAX_PLAYERS];
 static int current_round=0;;
 static int current_player_turn=0;
+static boolean one_card_played_received = FALSE;
+static int amount_cards_played_this_turn=0;
 int main(int argc , char *argv[]){
     FILE *fpError;
     struct sigaction alarm, interrupt;
@@ -94,6 +96,9 @@ int main(int argc , char *argv[]){
         if(one_ecart_received && amount_ecart_received == amount_players){
             send_ecart_back();
             ask_for_card(current_player_turn);
+        }
+        if(one_card_played_received && amount_card_played_this_turn == amount_players){
+            end_turn();
         }
             
         if(game_running){
@@ -609,5 +614,9 @@ void ask_for_card(int player_idx){
  *
  */
 void receive_played_card(int socket, message msg){
-
+    s_write_card(msg.deck[0]);
+    one_card_played_received = TRUE;
+    amount_cards_played_this_turn++;
+    mess.code=C_SHOW_PLI;
+    send_message_everybody(mess);
 }

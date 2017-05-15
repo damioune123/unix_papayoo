@@ -18,4 +18,6 @@ void remove_ecart(int*); // to remove the ecart from the deck
 void add_new_ecart(card * , int);//add the ecart given by another player to the deck
 boolean convert_input_to_integer_array(char *, int**);//convert the char * input to an array of integer; returns TRUE if all OK, FALSE else
 void show_info();//displays basic info like scores of all players reading shared memory, current papayoo, current round
+void play_card();//Ask the player to play a card
+void show_pli();//this function shows the current pli
 #endif
