@@ -115,8 +115,6 @@ void send_ecart(int client_socket){
     show_cards(mSent.deck, mSent.deck_logical_size);
     remove_ecart(array_ints);
     //send_message(mSent, client_socket);
-    printf("Your deck after the ecart removal :\n");
-    show_cards(deck, deck_logical_size);
     waiting_for_ecart = TRUE;
 }
 /**
@@ -127,59 +125,23 @@ void send_ecart(int client_socket){
  *
  */
 void remove_ecart(int *indexes){
-    int *swap_unavailable;
-    if( (swap_unavailable = (int *) malloc(sizeof(int)*5)) == NULL){
-        fprintf(stderr, "Erreur malloc\n");
-        exit(EXIT_FAILURE);
-    }
-    int swap_size=0;
-    int i;
-    for(i=0; i < 5 ; i++){
-        if(indexes[i]>=deck_logical_size-6)
-            swap_unavailable[swap_size++]=indexes[i];
-    }
-    for(i=0; i < 5 ; i++){
-        if(indexes[i] <0 || indexes[i] >= deck_logical_size){
-            fprintf(stderr,"Wrong index\n");
-            exit(EXIT_FAILURE);
+    card newDeck[deck_logical_size];
+    int idx=0;
+    int i, j;
+    for(i=0; i < deck_logical_size ; i++){
+        boolean OK=TRUE;
+        for(j=0; j < 5 ; j++){
+            if(indexes[j]==i)
+                OK=FALSE;
         }
-        if(indexes[i]<deck_logical_size -6)
-            memcpy(&deck[indexes[i]], &deck[find_swap(&swap_unavailable, &swap_size)], sizeof(card));
+        if(OK)
+            memcpy(&newDeck[idx++], &deck[i], sizeof(card));
     }
-    //deck_logical_size-=5;
-
-
-}
-/**
- *
- * This function finds an available swap candidate at the end of the packed to remplace a card to delete. The swap candidate cannot be a card which will be marked as  deleted or already been mark as deleted. IF a card has already been swapped, it is marked as an unvailable candidate for the next swapping.
- *
- * @param int ** swap_unaivalable : the array of int of unaivalable candidate
- *
- * @param int * size : the logical size of the array above
- *
- * @return : the index of a good swap candidate
- *
- *
- */
-int find_swap(int ** swap_unavailable, int * size){
-    for(int i=deck_logical_size-5 ; i < deck_logical_size ; i++){
-        boolean OK = TRUE;
-        for(int j=0; j < 5 ; j++){
-            if((*swap_unavailable)[j] == i){
-                OK= FALSE;
-                break;
-            }
-        }
-        if(OK){
-            (*swap_unavailable)[*size++]=i;
-                return i;
-            }
+    for(i=0; i < deck_logical_size; i++){
+        memcpy(&deck[i], &newDeck[i], sizeof(card));
     }
-    fprintf(stderr," Error , no swap candidate found for card removal\n");
-    exit(EXIT_FAILURE);
+    deck_logical_size-=5;
 }
-
 /**
  *
  * This function converts a char * into an array of 5 integers.
