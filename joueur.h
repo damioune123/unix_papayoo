@@ -17,4 +17,5 @@ void send_ecart();//used to ask player to remove 5 cards and sends them to the s
 void remove_ecart(int*); // to remove the ecart from the deck
 void add_new_ecart(card * , int);//add the ecart given by another player to the deck
 boolean convert_input_to_integer_array(char *, int**);//convert the char * input to an array of integer; returns TRUE if all OK, FALSE else
+void show_scores();//displays scores of all players reading shared memory
 #endif

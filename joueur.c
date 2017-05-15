@@ -16,6 +16,7 @@ static boolean waiting_for_ecart = FALSE;//used after sending ecart and waiting 
 static char players_names[MAX_PLAYERS][BUFFER_SIZE];//used to read names from shared memory
 static int scores[MAX_PLAYERS];//used to read scores from shared memory
 static int player_id;//id of the current player
+static int amount_players; //aount of players in the game
 int main(int argc , char *argv[]){
     struct sigaction interrupt;
     interrupt.sa_handler = &interrupt_handler;
@@ -79,7 +80,22 @@ void init_deck(card * cards_sent, int cards_sent_size){
     for(int i=0; i < deck_logical_size ;i++){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
+    amount_players = DECK_PHYSICAL_SIZE/cards_sent_size;
     send_ecart(socketC);
+}
+/**
+ *
+ * This function displays all the scores of the players (reading shared memory)
+ *
+ *
+ */
+void show_scores(){
+    s_read_names((char**)players_names);
+    s_read_scores((int **) scores);
+    printf("Current scores :\n");
+    for(int i=0; i < amount_players ; i++){
+        printf("Name : %s | Score : %i\n", players_names[i], scores[i]);
+    }
 }
 /**
  *
@@ -98,6 +114,7 @@ void add_new_ecart(card * cards_sent, int cards_sent_size){
     }
 printf("Here is your complete deck for the round : \n");
     show_cards(deck, deck_logical_size);
+    show_scores();
     waiting_for_ecart = FALSE;
 }
 /**
@@ -150,9 +167,9 @@ void send_ecart(int client_socket){
  *
  */
 void remove_ecart(int *indexes){
-    card newDeck[deck_logical_size];
-    int idx=0;
     int i, j;
+    int idx=0;
+    card newDeck[deck_logical_size];
     for(i=0; i < deck_logical_size ; i++){
         boolean OK=TRUE;
         for(j=0; j < 5 ; j++){
@@ -195,6 +212,15 @@ boolean convert_input_to_integer_array(char * input, int ** array){
         (*array)[number_typed_in++] = number-1;
         if(number_typed_in >5){
             return FALSE;
+        }
+    }
+    //seek doublons
+    for(int i=0; i <5 ; i++){
+        for(int j=0; j<5;j++){
+            if(i!=j){
+                if((*array)[i]==(*array)[j])
+                    return FALSE;
+            }
         }
     }
     return TRUE;

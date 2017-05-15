@@ -200,7 +200,6 @@ void receive_ecart_from_player(int socket, message msg){
     for(int i=0; i < 5; i++){
         memcpy(&ecarts_received[player_id].cards[i], &msg.deck[i], sizeof(card));
     }
-    show_cards(ecarts_received[player_id].cards, 5);
 }
 
 /**
@@ -443,15 +442,6 @@ void init_shared_memory(){
         s_write_score(i,0);
         s_write_name(i, players[i].name);
     }
-    //DEBUG : READ IN SHARED MEMORY
-    /*
-       char names[MAX_PLAYERS][BUFFER_SIZE];
-       int scores[MAX_PLAYERS];
-       s_read_names((char **)names);
-       s_read_scores((int **) scores);
-       for(i =0; i < amount_players; i++){
-       printf("NOM %s // score %i \n", names[i], scores[i]);
-       }*/
 }
 /**
  *
