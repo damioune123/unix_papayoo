@@ -19,6 +19,11 @@ static basic_info info; //basic information : player index, amount_players, curr
 static card plis[DECK_PHYSICAL_SIZE];
 int pli_logical_size=0;
 int main(int argc , char *argv[]){
+    fd_set fds;
+    char buffer_stdin[BUFFER_SIZE];
+    int ret_stdin;
+    int max_fd, select_res;
+    struct timeval timeout = {0, 1000000};
     struct sigaction interrupt;
     interrupt.sa_handler = &interrupt_handler;
     sigaction(SIGTERM, &interrupt, NULL);
@@ -35,59 +40,97 @@ int main(int argc , char *argv[]){
     locate_semaphores();
     try_to_connect(&socketC, &server_addr);
     signup(&socketC);
+    printf("PRESS \"s\" KEY Follow by ENTER to display scores\n");
     while(TRUE){
+        FD_ZERO(&fds);
+        FD_SET(0, &fds);
+        FD_SET(socketC, &fds);
+        max_fd =socketC+1;
         usleep(50);//to prevent cpu overheat
-        if(receive_message( &mRecv, socketC)==TRUE){
-            switch (mRecv.code){
-                case C_INFO:
-                    printf("%s", mRecv.payload);
-                    break;
-                case C_GAME_CANCELLED:
-                    printf("%s", mRecv.payload);
-                    shutdown_socket(socketC);
-                    socketC=0;
-                    try_to_connect(&socketC, &server_addr);
-                    signup(&socketC);
-                    break;
-                case C_SERVER_SHUT_DOWN:
-                    printf("%s", mRecv.payload);
-                    shutdown_socket(socketC);
-                    return EXIT_FAILURE;
-                case C_INIT_DECK_RECEIVED:
-                    init_deck(mRecv.deck, mRecv.deck_logical_size);
-                    break;
-                case C_ALL_ECART_DECK_RECEIVED:
-                    add_new_ecart(mRecv.deck, mRecv.deck_logical_size);
-                    break;
-                case C_BASIC_INFO:
-                    memcpy(&info, &mRecv.info,sizeof(basic_info));
-                    show_info(0);
-                    break;
-                case C_ASK_FOR_CARD:
-                    play_card();
-                    break;
-                case C_SHOW_PLI:
-                    show_pli();
-                    break;
-                case C_ADD_PLI:
-                    add_pli(mRecv.deck, mRecv.deck_logical_size);
-                    break;
-                case C_ADD_SCORE:
-                    add_score();
-                    break;
-                case C_END_GAME:
-                    end_client(mRecv);
-                    break;
-                default:
-                    continue;
+        if( (select_res = select(max_fd, &fds, NULL, NULL, &timeout))<0){
+            if(errno != EINTR){
+                perror("Erreur select \n");
+                shutdown_socket(socketC);
+                exit(EXIT_FAILURE);
             }
         }
-        if(waiting_for_ecart){
-            printf("ALL players haven't sent their ecart yet. Please Wait ...\n Next check in %i seconds\n", TIME_TRY_CONNECT);
-            sleep(TIME_TRY_CONNECT);
+        if(select_res>0){
+            if(FD_ISSET(0, &fds)){
+                if( (ret_stdin = read(0, buffer_stdin, BUFFER_SIZE)) ==-1){
+                    fprintf(stderr,"Erreur read stdin\n");
+                    exit(EXIT_FAILURE);
+                }
+                else if(ret_stdin==0){
+                    printf("CTRL-D caught, closing client ..\n.");
+                    shutdown_socket(socketC);
+                    exit(EXIT_SUCCESS);
+
+                }
+                else{
+                    buffer_stdin[ret_stdin-1]='\0';
+                    if(buffer_stdin[0]=='s'  || buffer_stdin[0]=='S')
+                        mSent.code= C_ASK_BASIC_INFO;
+                        send_message(mSent, socketC);
+                }
+
+            }
+            else if (FD_ISSET(socketC, &fds)){
+                if(receive_message( &mRecv, socketC)==TRUE){
+                    switch (mRecv.code){
+                        case C_INFO:
+                            printf("%s", mRecv.payload);
+                            break;
+                        case C_GAME_CANCELLED:
+                            printf("%s", mRecv.payload);
+                            shutdown_socket(socketC);
+                            try_to_connect(&socketC, &server_addr);
+                            signup(&socketC);
+                            break;
+                        case C_SERVER_SHUT_DOWN:
+                            printf("%s", mRecv.payload);
+                            shutdown_socket(socketC);
+                            return EXIT_FAILURE;
+                        case C_INIT_DECK_RECEIVED:
+                            init_deck(mRecv.deck, mRecv.deck_logical_size);
+                            break;
+                        case C_ALL_ECART_DECK_RECEIVED:
+                            add_new_ecart(mRecv.deck, mRecv.deck_logical_size);
+                            break;
+                        case C_BASIC_INFO:
+                            memcpy(&info, &mRecv.info,sizeof(basic_info));
+                            show_info(0);
+                            break;
+                        case C_ASK_FOR_CARD:
+                            play_card();
+                            break;
+                        case C_SHOW_PLI:
+                            show_pli();
+                            break;
+                        case C_ADD_PLI:
+                            add_pli(mRecv.deck, mRecv.deck_logical_size);
+                            break;
+                        case C_ADD_SCORE:
+                            add_score();
+                            break;
+                        case C_END_GAME:
+                            end_client(mRecv);
+                            break;
+                        case C_NO_INFO:
+                            printf("No game has started yet, we can't display scores\n");
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+            }
+            if(waiting_for_ecart){
+                printf("ALL players haven't sent their ecart yet. Please Wait ...\n Next check in %i seconds\n", TIME_TRY_CONNECT);
+                sleep(TIME_TRY_CONNECT);
+            }
         }
     }
-    return EXIT_SUCCESS;
+    fprintf(stderr,"This program ought not to exit here\n");
+    return EXIT_FAILURE;
 }
 /**
  * This function will fill up the deck and deck_logical_size static vars with the ones sent by the server after it finishes dealing cards.
@@ -159,9 +202,8 @@ void add_new_ecart(card * cards_sent, int cards_sent_size){
     for(int i=0; i < cards_sent_size; i++){
         memcpy(&deck[deck_logical_size++], &cards_sent[i], sizeof(card));
     }
-printf("Here is your complete deck for the round : \n");
+    printf("Here is your complete deck for the round : \n");
     show_cards(deck, deck_logical_size, 0);
-    show_info(0);
     waiting_for_ecart = FALSE;
 }
 /**

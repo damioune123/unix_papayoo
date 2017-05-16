@@ -41,7 +41,7 @@ void show_card(card cardToShow, char *);//used to show a single card : debu only
 void find_papayoo();//used to find the type of the papayoo for the next round (randomly) and notificate all the players once chosen
 void receive_ecart_from_player(int, message); //used to receive an ecart from a player
 void send_ecart_back();//send ecart to player after all ecarts have been received
-void send_basic_info();//send the basic info to a player (amount_players, player index, papayoo)
+void send_basic_info_everyone();//send the basic info to all players (amount_players, player index, papayoo)
 void ask_for_card(int);//ask a player to play a card
 void receive_played_card(int, message); //receive a played card from a player
 void end_turn();//finds out the looser of the pli and sends him the cards of the pli
@@ -50,4 +50,5 @@ void end_round();//ends a round , asks all players to send their score
 void update_score(int, message);//update score in shared memory for a single player
 void ask_for_score();// ask all players to send their score back
 void end_game();//reset game information to be ready for a new game
+void send_basic_info(int,message);//send the basic info to a single player (amount_players, player index, papayoo)
 #endif

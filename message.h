@@ -38,6 +38,7 @@ typedef struct message {
 #define C_ADD_PLI 11
 #define C_ADD_SCORE 12
 #define C_END_GAME 13
+#define C_NO_INFO 14
 
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"
@@ -50,4 +51,5 @@ typedef struct message {
 #define C_ECART_DECK_SENT 1
 #define C_PLAY_CARD 2
 #define C_UPDATE_SCORE 3
+#define C_ASK_BASIC_INFO 4
 #endif

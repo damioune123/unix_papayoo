@@ -29,7 +29,7 @@ int main(int argc , char *argv[]){
     fd_set fds;
     struct sockaddr_in server_addr, client_addr;
     int fdLock = open(SERVER_LOCK, O_RDWR);
-    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player, receive_played_card, update_score};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player, receive_played_card, update_score, send_basic_info};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
     if (fdLock == -1) { 
         perror("Erreur ouverture fichier lock\n");
         exit(EXIT_FAILURE);
@@ -411,7 +411,7 @@ void start_round() {
     init_deck();
     shuffle_deck();
     find_papayoo();
-    send_basic_info();
+    send_basic_info_everyone();
     deal_cards();
 }
 /**
@@ -588,7 +588,7 @@ void show_card(card cardToShow, char * display){
 void find_papayoo(){
     papayoo = rand() % 4; 
 }
-void send_basic_info(){
+void send_basic_info_everyone(){
     mess.code=C_BASIC_INFO;
     mess.info.amount_players=amount_players;
     mess.info.papayoo=papayoo;
@@ -750,4 +750,15 @@ void end_game(){
         s_write_name(i, buffer);
     }
     s_reset_card_size();
+}
+void send_basic_info(int socket, message msg){
+    if(current_round==0)
+        mess.code=C_NO_INFO;
+    else
+        mess.code=C_BASIC_INFO;
+    mess.info.amount_players=amount_players;
+    mess.info.papayoo=papayoo;
+    mess.info.current_round=current_round;
+    mess.info.player_index=find_player_id_by_socket(socket);
+    send_message(mess, socket);
 }
