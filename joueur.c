@@ -61,7 +61,7 @@ int main(int argc , char *argv[]){
                     break;
                 case C_BASIC_INFO:
                     memcpy(&info, &mRecv.info,sizeof(basic_info));
-                    show_info();
+                    show_info(0);
                     break;
                 case C_ASK_FOR_CARD:
                     play_card();
@@ -74,6 +74,9 @@ int main(int argc , char *argv[]){
                     break;
                 case C_ADD_SCORE:
                     add_score();
+                    break;
+                case C_END_GAME:
+                    end_client(mRecv);
                     break;
                 default:
                     continue;
@@ -104,8 +107,10 @@ void init_deck(card * cards_sent, int cards_sent_size){
  * This function displays all the basic information of the players (reading shared memory) (scores/names/current rount/papayoo)
  *
  *
+ * @param int option : 0 if normal info | 1 if game finished info
+ *
  */
-void show_info(){
+void show_info(int option){
     s_read_names((char**)players_names);
     s_read_scores((int **) scores);
     printf("-------------------INFO REVIEW--------------------------\n");
@@ -116,23 +121,26 @@ void show_info(){
         else
             printf("Name : %s | Score : %i\n", players_names[i], scores[i]);
     }
-    printf("Current round : %i\n", info.current_round);
-    switch(info.papayoo){
-        case SPADES_CONST:
-            printf("Papayoo is %s\n", SPADES);
-            break;
-        case HEARTS_CONST:
-            printf("Papayoo is %s\n", HEARTS);
-            break;
-        case DIAMONDS_CONST:
-            printf("Papayoo is %s\n", DIAMONDS);
-            break;
-        case CLUBS_CONST:
-            printf("Papayoo is %s\n", CLUBS);
-            break;
-        default:
-            fprintf(stderr," Wrong papayoo const\n");
-            exit(EXIT_FAILURE);
+    if(option ==0){
+
+        printf("Current round : %i\n", info.current_round);
+        switch(info.papayoo){
+            case SPADES_CONST:
+                printf("Papayoo is %s\n", SPADES);
+                break;
+            case HEARTS_CONST:
+                printf("Papayoo is %s\n", HEARTS);
+                break;
+            case DIAMONDS_CONST:
+                printf("Papayoo is %s\n", DIAMONDS);
+                break;
+            case CLUBS_CONST:
+                printf("Papayoo is %s\n", CLUBS);
+                break;
+            default:
+                fprintf(stderr," Wrong papayoo const\n");
+                exit(EXIT_FAILURE);
+        }
     }
     printf("-------------------------------------------------------\n");
 }
@@ -153,7 +161,7 @@ void add_new_ecart(card * cards_sent, int cards_sent_size){
     }
 printf("Here is your complete deck for the round : \n");
     show_cards(deck, deck_logical_size, 0);
-    show_info();
+    show_info(0);
     waiting_for_ecart = FALSE;
 }
 /**
@@ -487,8 +495,21 @@ void add_score(){
     }
     mSent.code =C_UPDATE_SCORE;
     mSent.score = score;
-    printf("ADD SCORE ENTERED , current score %i\n", score);
     send_message(mSent, socketC);
     pli_logical_size=0;
 
 }
+/**
+ * End client an shows winner
+ *
+ *@param message mess : the message with the name of the winner
+ *
+ */ 
+void end_client(message mess){
+    printf("GAME FINISHED : Final scores : %s\n");
+    show_info(1);
+    printf("Winner is %s\n !!!\n", mess.payload);
+    shutdown_socket(socketC);
+    exit(EXIT_SUCCESS);
+}
+

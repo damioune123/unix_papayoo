@@ -97,9 +97,10 @@ int main(int argc , char *argv[]){
             ask_for_card(current_player_turn);
         }
         if(updating_score && amount_scores_updated == amount_players){
-            start_round();
-        }
-        if(game_running){
+            if(amount_players >=2){
+                printf("current_round %i \n", current_round);
+                start_round();
+            }
         }
     }
     if(argc==3)
@@ -404,6 +405,8 @@ void start_game() {
  *
  */
 void start_round() {
+    updating_score=FALSE;
+    amount_scores_updated = 0;
     current_round++;
     init_deck();
     shuffle_deck();
@@ -417,6 +420,9 @@ void start_round() {
  *
  */
 void deal_cards() {
+    if(amount_players == 0){ // TODO remove this if/else after debug
+        printf("ERROR : deal cards was called when no players were connected\n");
+    }else{
     mess.code=C_INIT_DECK_RECEIVED;
     int amount_cards_player= DECK_PHYSICAL_SIZE/amount_players;
     int idx=0;
@@ -427,6 +433,7 @@ void deal_cards() {
         }
         mess.deck_logical_size = amount_cards_player;
         send_message(mess, players[i].socket);
+    }
     }
 }
 /**
@@ -682,14 +689,12 @@ void send_pli(int player_index){
 void end_round(){
     current_player_turn=0;    
     ask_for_score();
-    if(current_round == 3)
-        end_game();
     one_ecart_received = FALSE;
     amount_ecart_received = 0;
     current_player_turn = 0;
-    updating_score=FALSE;
-    amount_scores_updated = 0;
     amount_turn = 0;
+    if(current_round == 3)
+        end_game();
 }
 /**
  *
@@ -722,6 +727,20 @@ void update_score(int socket, message msg){
  *
  */
 void end_game(){
+    mess.code =C_END_GAME;
+    int final_scores[MAX_PLAYERS];
+    s_read_scores((int **) &final_scores);
+    int idx_winner;
+    int min=251;
+    for(int i=0; i < amount_players ; i++){
+        if(min > final_scores[i]){
+            min = final_scores[i];
+            idx_winner = i;
+        }
+    }
+    strcpy(mess.payload, players[idx_winner].name);
+    send_message_everybody(mess);
+    sleep(20);
     clear_lobby();
     current_round=0;
     char buffer[1];

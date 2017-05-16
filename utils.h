@@ -6,6 +6,7 @@
 */
 #ifndef UTIL_H
 #define UTIL_H
+#include <limits.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>

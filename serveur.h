@@ -7,7 +7,7 @@
 #ifndef SERVEUR_H
 #define SERVEUR_H
 #include "socket.h"
-#define AMOUNT_PLI 1
+#define AMOUNT_PLI 3
 #define COUNTDOWN 10 //Countdown to wait to start the game during lobby registration
 #define SERVER_LOCK "./server.lock"
 typedef void (*fct_ptr)( );

@@ -37,6 +37,7 @@ typedef struct message {
 #define C_SHOW_PLI 10
 #define C_ADD_PLI 11
 #define C_ADD_SCORE 12
+#define C_END_GAME 13
 
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"

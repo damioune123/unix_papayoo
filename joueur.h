@@ -17,10 +17,11 @@ void send_ecart();//used to ask player to remove 5 cards and sends them to the s
 void remove_ecart(int*); // to remove the ecart from the deck
 void add_new_ecart(card * , int);//add the ecart given by another player to the deck
 boolean convert_input_to_integer_array(char *, int**);//convert the char * input to an array of integer; returns TRUE if all OK, FALSE else
-void show_info();//displays basic info like scores of all players reading shared memory, current papayoo, current round
+void show_info(int);//displays basic info like scores of all players reading shared memory, current papayoo, current round
 void play_card();//Ask the player to play a card
 void show_pli();//this function shows the current pli
 void remove_card(int);//remove a card from the player's deck
 void add_pli(card *, int);//add the pli to pli's deck
 void add_score();//compute player round score and sends it to the server
+void end_client(message mess);
 #endif
