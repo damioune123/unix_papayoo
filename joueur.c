@@ -124,8 +124,8 @@ int main(int argc , char *argv[]){
                 }
             }
             if(waiting_for_ecart){
-                printf("ALL players haven't sent their ecart yet. Please Wait ...\n Next check in %i seconds\n", TIME_TRY_CONNECT);
-                sleep(TIME_TRY_CONNECT);
+                printf("ALL players haven't sent their ecart yet. Please Wait ...\n");
+                sleep(1);
             }
         }
     }
@@ -197,13 +197,12 @@ void show_info(int option){
  *
  */
 void add_new_ecart(card * cards_sent, int cards_sent_size){
-    printf("Here are the cards sent by player %s \n", players_names[(info.player_index+1)%info.amount_players]);
+    printf("-----Here are the cards sent by player %s ---- \n", players_names[(info.player_index+1)%info.amount_players]);
     show_cards(cards_sent, cards_sent_size, 0);
+    printf("----------------------------------------\n");
     for(int i=0; i < cards_sent_size; i++){
         memcpy(&deck[deck_logical_size++], &cards_sent[i], sizeof(card));
     }
-    printf("Here is your complete deck for the round : \n");
-    show_cards(deck, deck_logical_size, 0);
     waiting_for_ecart = FALSE;
 }
 /**

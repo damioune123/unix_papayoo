@@ -97,10 +97,7 @@ int main(int argc , char *argv[]){
             ask_for_card(current_player_turn);
         }
         if(updating_score && amount_scores_updated == amount_players){
-            if(amount_players >=2){
-                printf("current_round %i \n", current_round);
-                start_round();
-            }
+            start_round();
         }
     }
     if(argc==3)
