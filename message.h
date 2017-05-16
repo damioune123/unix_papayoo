@@ -20,6 +20,7 @@ typedef struct message {
     card deck[DECK_PHYSICAL_SIZE/2];
     int deck_logical_size;
     basic_info info;
+    int score;
 } message;
 //server-> client
 //code
@@ -35,6 +36,7 @@ typedef struct message {
 #define C_ASK_FOR_CARD 9
 #define C_SHOW_PLI 10
 #define C_ADD_PLI 11
+#define C_ADD_SCORE 12
 
 //message
 #define M_SERVER_ERROR "An error occured on ther servor\n"
@@ -46,4 +48,5 @@ typedef struct message {
 #define C_ADD_PLAYER 0
 #define C_ECART_DECK_SENT 1
 #define C_PLAY_CARD 2
+#define C_UPDATE_SCORE 3
 #endif

@@ -20,6 +20,8 @@ static int current_player_turn=0;
 static boolean one_card_played_received = FALSE;
 static int amount_cards_played_this_turn=0;
 static int amount_turn=0;
+static boolean updating_score=FALSE;
+static int amount_scores_updated=0;
 int main(int argc , char *argv[]){
     FILE *fpError;
     struct sigaction alarm, interrupt;
@@ -27,7 +29,7 @@ int main(int argc , char *argv[]){
     fd_set fds;
     struct sockaddr_in server_addr, client_addr;
     int fdLock = open(SERVER_LOCK, O_RDWR);
-    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player, receive_played_card};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
+    fct_ptr dispatcher[] = {add_player, receive_ecart_from_player, receive_played_card, update_score};//USE TO DIRECTLY CALL FUNCTION WITH A CODE SENT FROM CLIENT
     if (fdLock == -1) { 
         perror("Erreur ouverture fichier lock\n");
         exit(EXIT_FAILURE);
@@ -97,7 +99,9 @@ int main(int argc , char *argv[]){
             send_ecart_back();
             ask_for_card(current_player_turn);
         }
-            
+        if(updating_score && amount_scores_updated == amount_players){
+            start_round;
+        }
         if(game_running){
         }
     }
@@ -680,6 +684,32 @@ void send_pli(int player_index){
  */
 void end_round(){
     current_player_turn=0;    
-    start_round();
+    //TODO reset information ?
+
+}
+/**
+ *
+ * This function asks all the players to send their score.
+ *
+ */
+void ask_for_score(){
+    mess.code = C_ADD_SCORE;
+    amount_scores_updated =0;
+    updating_score=TRUE;
+    send_message_everybody(mess);
+}
+/**
+ * 
+ * This function update the score of a player in shared memory
+ *
+ */
+void update_score(int socket, message msg){
+    int scores_temp[MAX_PLAYERS];
+    int player_idx = find_player_id_by_socket(socket);
+    int current_score;
+    s_read_scores((int **) &scores_temp);
+    current_score = scores_temp[player_idx]+msg.score;
+    s_write_score(player_idx, current_score);
+    printf("DEBUG score of player %s is now %i\n", players[player_idx].name, current_score);
 
 }

@@ -22,4 +22,5 @@ void play_card();//Ask the player to play a card
 void show_pli();//this function shows the current pli
 void remove_card(int);//remove a card from the player's deck
 void add_pli(card *, int);//add the pli to pli's deck
+void add_score();//compute player round score and sends it to the server
 #endif

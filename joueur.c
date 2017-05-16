@@ -72,6 +72,9 @@ int main(int argc , char *argv[]){
                 case C_ADD_PLI:
                     add_pli(mRecv.deck, mRecv.deck_logical_size);
                     break;
+                case C_ADD_SCORE:
+                    add_score();
+                    break;
                 default:
                     continue;
             }
@@ -464,8 +467,27 @@ void add_pli(card * pli_sent, int pli_sent_size){
     }
     pli_logical_size += pli_sent_size;
     //DEBUG
-    printf("DEBUG :YOUR CURRENT PLIS DECK : %i %i\n", pli_logical_size, pli_sent_size);
+    printf("------------Your plis round deck : ------------\n");
     show_cards(plis, pli_logical_size, 0);
-    printf("END DEBUG\n");
+    printf("-----------------------------------------------\n");
+
+}
+/**
+ * 
+ * This function computes player's round scores and sends it to the server
+ *
+ */
+void add_score(){
+    int score=0;
+    for(int i = 0; i < pli_logical_size ; i++){
+        if(plis[i].type == PAYOO_CONST)
+            score+= plis[i].number;
+        if(plis[i].type==info.papayoo && plis[i].number ==7)
+            score+=40;
+    }
+    mSent.code =C_UPDATE_SCORE;
+    mSent.score = score;
+    send_message(mSent, socketC);
+    pli_logical_size=0;
 
 }

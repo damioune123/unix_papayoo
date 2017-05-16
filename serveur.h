@@ -47,4 +47,5 @@ void receive_played_card(int, message); //receive a played card from a player
 void end_turn();//finds out the looser of the pli and sends him the cards of the pli
 void send_pli(int); //This function sends the pli to the player who lost the turn
 void end_round();//ends a round , asks all players to send their score
+void update_score(int, message);//update score in shared memory for a single player
 #endif
