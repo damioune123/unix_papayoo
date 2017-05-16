@@ -44,4 +44,7 @@ void send_ecart_back();//send ecart to player after all ecarts have been receive
 void send_basic_info();//send the basic info to a player (amount_players, player index, papayoo)
 void ask_for_card(int);//ask a player to play a card
 void receive_played_card(int, message); //receive a played card from a player
+void end_turn();//finds out the looser of the pli and sends him the cards of the pli
+void send_pli(int); //This function sends the pli to the player who lost the turn
+void end_round();//ends a round , asks all players to send their score
 #endif

@@ -16,6 +16,8 @@ static boolean waiting_for_ecart = FALSE;//used after sending ecart and waiting 
 static char players_names[MAX_PLAYERS][BUFFER_SIZE];//used to read names from shared memory
 static int scores[MAX_PLAYERS];//used to read scores from shared memory
 static basic_info info; //basic information : player index, amount_players, current round, papayoo
+static card plis[DECK_PHYSICAL_SIZE];
+int pli_logical_size=0;
 int main(int argc , char *argv[]){
     struct sigaction interrupt;
     interrupt.sa_handler = &interrupt_handler;
@@ -61,11 +63,14 @@ int main(int argc , char *argv[]){
                     memcpy(&info, &mRecv.info,sizeof(basic_info));
                     show_info();
                     break;
-                case ASK_FOR_CARD:
+                case C_ASK_FOR_CARD:
                     play_card();
                     break;
-                case SHOW_PLI:
+                case C_SHOW_PLI:
                     show_pli();
+                    break;
+                case C_ADD_PLI:
+                    add_pli(mRecv.deck, mRecv.deck_logical_size);
                     break;
                 default:
                     continue;
@@ -139,12 +144,12 @@ void show_info(){
  */
 void add_new_ecart(card * cards_sent, int cards_sent_size){
     printf("Here are the cards sent by player %s \n", players_names[(info.player_index+1)%info.amount_players]);
-    show_cards(cards_sent, cards_sent_size);
+    show_cards(cards_sent, cards_sent_size, 0);
     for(int i=0; i < cards_sent_size; i++){
         memcpy(&deck[deck_logical_size++], &cards_sent[i], sizeof(card));
     }
 printf("Here is your complete deck for the round : \n");
-    show_cards(deck, deck_logical_size);
+    show_cards(deck, deck_logical_size, 0);
     show_info();
     waiting_for_ecart = FALSE;
 }
@@ -160,7 +165,7 @@ void send_ecart(int client_socket){
         fprintf(stderr, "Erreur malloc\n");
         exit(EXIT_FAILURE);
     }
-    show_cards(deck, deck_logical_size);
+    show_cards(deck, deck_logical_size, 0);
     printf("Here are your cards, please choose 5 for ecart (type in the cards number with space betwen them)\n");
     int ecart_ok=FALSE;
     while(TRUE){
@@ -185,7 +190,7 @@ void send_ecart(int client_socket){
     mSent.deck_logical_size=5;
     mSent.code=C_ECART_DECK_SENT;
     printf("You've chosen the followin cards\n Sending to server ...\n");
-    show_cards(mSent.deck, mSent.deck_logical_size);
+    show_cards(mSent.deck, mSent.deck_logical_size, 0);
     remove_ecart(array_ints);
     send_message(mSent, client_socket);
     waiting_for_ecart = TRUE;
@@ -320,11 +325,13 @@ void interrupt_handler(int signum){
  * @param card * deck : The array of cards (the deck) of the player (here it is a static var but passed as parameter to make the code reusable)
  *  
  * @param int logical_size : the logical size of the deck (here it is a static var but passed as parameter to make the code reusable)
+ *
+ * @param int option : 0 = don't display player who last played the card, 1 =do
  */
-void show_cards(card* deck, int logical_size){
+void show_cards(card* deck, int logical_size, int option){
     char display[BUFFER_SIZE];
     for(int i = 0; i < logical_size; i++){
-        show_card(deck[i], display);
+        show_card(deck[i], display, option);
         printf("CARD %i : %s\n",i+1, display);
     }
 }
@@ -336,27 +343,53 @@ void show_cards(card* deck, int logical_size){
  *
  * @param char * display : this is the buffer that's is going to be filled up with the card information
  *
+ * @param int option : 0 = don't display player who last played the card, 1 =do
+ *
  */
-void show_card(card cardToShow, char * display){
-    switch(cardToShow.type){
-        case SPADES_CONST:
-            sprintf(display, "%i of %s", cardToShow.number, SPADES);
-            break;
-        case HEARTS_CONST:
-            sprintf(display, "%i of %s", cardToShow.number, HEARTS);
-            break;
-        case CLUBS_CONST:
-            sprintf(display, "%i of %s", cardToShow.number, CLUBS);
-            break;
-        case DIAMONDS_CONST:
-            sprintf(display, "%i of %s", cardToShow.number, DIAMONDS);
-            break;
-        case PAYOO_CONST:
-            sprintf(display, "%i of %s", cardToShow.number,PAYOOS );
-            break;
-        default:
-            fprintf(stderr, "Wrong card const\n");
-            exit(EXIT_FAILURE);
+void show_card(card cardToShow, char * display, int option){
+    if(option ==0){
+        switch(cardToShow.type){
+            case SPADES_CONST:
+                sprintf(display, "%i of %s", cardToShow.number, SPADES);
+                break;
+            case HEARTS_CONST:
+                sprintf(display, "%i of %s", cardToShow.number, HEARTS);
+                break;
+            case CLUBS_CONST:
+                sprintf(display, "%i of %s", cardToShow.number, CLUBS);
+                break;
+            case DIAMONDS_CONST:
+                sprintf(display, "%i of %s", cardToShow.number, DIAMONDS);
+                break;
+            case PAYOO_CONST:
+                sprintf(display, "%i of %s", cardToShow.number,PAYOOS );
+                break;
+            default:
+                fprintf(stderr, "Wrong card const\n");
+                exit(EXIT_FAILURE);
+        }
+    }
+    else{
+        switch(cardToShow.type){
+            case SPADES_CONST:
+                sprintf(display, "%i of %s, played by %s", cardToShow.number, SPADES, players_names[cardToShow.last_played] );
+                break;
+            case HEARTS_CONST:
+                sprintf(display, "%i of %s, played by %s", cardToShow.number, HEARTS, players_names[cardToShow.last_played] );
+                break;
+            case CLUBS_CONST:
+                sprintf(display, "%i of %s, played by %s", cardToShow.number, CLUBS, players_names[cardToShow.last_played] );
+                break;
+            case DIAMONDS_CONST:
+                sprintf(display, "%i of %s, played by %s", cardToShow.number, DIAMONDS,  players_names[cardToShow.last_played] );
+                break;
+            case PAYOO_CONST:
+                sprintf(display, "%i of %s, played by %s", cardToShow.number,PAYOOS, players_names[cardToShow.last_played] );
+                break;
+            default:
+                fprintf(stderr, "Wrong card const\n");
+                exit(EXIT_FAILURE);
+        }
     }
 }
 /**
@@ -366,14 +399,14 @@ void show_card(card cardToShow, char * display){
  *
  */
 void play_card(){
-    show_card(deck, deck_logical_size);
+    show_cards(deck, deck_logical_size, 0);
     printf("Here above is your current deck, please choose a card to play\n");
     int ret;
     int card_idx;
     char buffer[BUFFER_SIZE];
     while(TRUE){
         if( (ret = read(0, buffer, BUFFER_SIZE)) ==-1){
-            fprintf("Error read stdin\n");
+            fprintf(stderr,"Error read stdin\n");
             exit(EXIT_FAILURE);
         }
         else{
@@ -381,14 +414,17 @@ void play_card(){
             card_idx = atoi(buffer);
             if(card_idx>=1 && card_idx <=deck_logical_size)
                 break;
+            printf("Please choose a card between 1 and %i\n", deck_logical_size);
         }
     }
-    show_card(deck[--card_idx], buffer);
-    printf("You choose to play :\n%s", buffer);
+    show_card(deck[--card_idx], buffer, 0);
+    printf("You choose to play :\n%s\n", buffer);
     deck[card_idx].last_played=info.player_index;
-    memcpy(&mSent.cards[0], &deck[card_idx], sizeof(card));
+    memcpy(&mSent.deck[0], &deck[card_idx], sizeof(card));
+    remove_card(card_idx);
     mSent.code=C_PLAY_CARD;
     send_message(mSent, socketC);
+
 }
 /**
  *
@@ -397,5 +433,39 @@ void play_card(){
  *
  */
 void show_pli(){
+    card pli[MAX_PLAYERS];
+    s_read_cards((card **) &pli);
+    printf("------------------ Current Pli --------------------\n");
+    show_cards(pli, s_read_cards_size(), 1);
+    printf("---------------------------------------------------\n");
+    fflush(stdin);
+
+}
+/***
+ *
+ * This function removes a card from the player's deck.
+ *
+ * @param int card_idx : the card to remove.
+ *
+ *
+ */
+void remove_card(int card_idx){
+    for(int i=card_idx; i< deck_logical_size -1 ; i++){
+        memcpy(&deck[i], &deck[i+1], sizeof(card));
+    }
+    deck_logical_size--;
+
+}
+void add_pli(card * pli_sent, int pli_sent_size){
+    printf("You lost the turn, following cards will be added to you plis' deck\n");
+    show_cards(pli_sent, pli_sent_size, 0);
+    for(int i= pli_logical_size; i < pli_logical_size + pli_sent_size; i++){
+        memcpy(&plis[i], &pli_sent[i%pli_sent_size], sizeof(card));
+    }
+    pli_logical_size += pli_sent_size;
+    //DEBUG
+    printf("DEBUG :YOUR CURRENT PLIS DECK : %i %i\n", pli_logical_size, pli_sent_size);
+    show_cards(plis, pli_logical_size, 0);
+    printf("END DEBUG\n");
 
 }

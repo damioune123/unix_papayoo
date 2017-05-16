@@ -19,6 +19,7 @@ static int current_round=0;;
 static int current_player_turn=0;
 static boolean one_card_played_received = FALSE;
 static int amount_cards_played_this_turn=0;
+static int amount_turn=0;
 int main(int argc , char *argv[]){
     FILE *fpError;
     struct sigaction alarm, interrupt;
@@ -58,7 +59,6 @@ int main(int argc , char *argv[]){
     init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
     create_segment();
     init_semaphores();
-    receive_played_card(0, mess);
     while(server_running){
         usleep(100); //top prevent cpu overheat
         FD_ZERO(&fds);
@@ -96,9 +96,6 @@ int main(int argc , char *argv[]){
         if(one_ecart_received && amount_ecart_received == amount_players){
             send_ecart_back();
             ask_for_card(current_player_turn);
-        }
-        if(one_card_played_received && amount_card_played_this_turn == amount_players){
-            end_turn();
         }
             
         if(game_running){
@@ -617,6 +614,72 @@ void receive_played_card(int socket, message msg){
     s_write_card(msg.deck[0]);
     one_card_played_received = TRUE;
     amount_cards_played_this_turn++;
-    mess.code=C_SHOW_PLI;
-    send_message_everybody(mess);
+    int next_player = (msg.deck[0].last_played+1)%amount_players;
+    if(one_card_played_received && amount_cards_played_this_turn == amount_players){
+        end_turn();
+    }
+    else{
+        mess.code=C_SHOW_PLI;
+        send_message_everybody(mess);
+        ask_for_card(next_player);
+    }
+}
+/**
+ *
+ *  This functions ends a turn. It  finds out the looser of the pli and sends him the current pli.
+ *
+ *
+ */
+void end_turn(){
+    amount_turn++;
+    card pli[MAX_PLAYERS];
+    s_read_cards((card**) &pli);
+    int turn_type = pli[0].type;
+    int max_value = pli[0].number;
+    int looser = pli[0].last_played;
+    for(int i=1;i< amount_players;i++){
+        if(pli[i].type ==turn_type && pli[i].number > max_value){
+            looser =pli[i].last_played;
+            max_value = pli[i].number;
+        }
+    }
+    current_player_turn = looser;
+    one_card_played_received =FALSE;
+    amount_cards_played_this_turn =0;
+    send_pli(looser);
+    s_reset_card_size();
+    int total_turn = DECK_PHYSICAL_SIZE / amount_players;
+    if(amount_turn == total_turn)
+         end_round();
+    else
+        ask_for_card(looser);
+}
+/**
+ *
+ * This function sends player the current pli and he will put it  in his pli deck
+ *
+ * @param player_index : the index of the player who lost the turn
+ *
+ */
+void send_pli(int player_index){
+    card pli[MAX_PLAYERS];
+    s_read_cards((card **) &pli);
+    mess.code = C_ADD_PLI;
+    int pli_size = s_read_cards_size();
+    for(int i =0; i < pli_size ; i++){
+        memcpy(&mess.deck[i], &pli[i], sizeof(card));
+    }
+    mess.deck_logical_size=pli_size;
+    send_message(mess, players[player_index].socket);
+
+}
+/**
+ * 
+ * This functions ends the round. It asks players to send their score and reset round information
+ *
+ */
+void end_round(){
+    current_player_turn=0;    
+    start_round();
+
 }
