@@ -487,6 +487,7 @@ void add_score(){
     }
     mSent.code =C_UPDATE_SCORE;
     mSent.score = score;
+    printf("ADD SCORE ENTERED , current score %i\n", score);
     send_message(mSent, socketC);
     pli_logical_size=0;
 

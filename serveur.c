@@ -15,7 +15,7 @@ static int deck_logical_size = 0;
 static boolean one_ecart_received = FALSE;
 static int amount_ecart_received=0;
 static ecart ecarts_received[MAX_PLAYERS];
-static int current_round=0;;
+static int current_round=0;
 static int current_player_turn=0;
 static boolean one_card_played_received = FALSE;
 static int amount_cards_played_this_turn=0;
@@ -45,10 +45,7 @@ int main(int argc , char *argv[]){
     if(argc==3)
         fpError =freopen(argv[2], "a", stderr);
     port=atoi(argv[1]);
-    reset_players();
     amount_players=0;
-    server_running=TRUE;
-    game_running=FALSE;
     alarm.sa_handler = &alarm_handler;
     interrupt.sa_handler = &interrupt_handler;
     interrupt.sa_flags=0;
@@ -61,7 +58,7 @@ int main(int argc , char *argv[]){
     init_server(&server_socket, &server_addr, port, MAX_PLAYERS);
     create_segment();
     init_semaphores();
-    while(server_running){
+    while(TRUE){
         usleep(100); //top prevent cpu overheat
         FD_ZERO(&fds);
         FD_SET(server_socket, &fds);
@@ -100,7 +97,7 @@ int main(int argc , char *argv[]){
             ask_for_card(current_player_turn);
         }
         if(updating_score && amount_scores_updated == amount_players){
-            start_round;
+            start_round();
         }
         if(game_running){
         }
@@ -464,6 +461,7 @@ void init_shared_memory(){
  */
 void init_deck(){
     unsigned int i;
+    deck_logical_size=0;
     char buffer[BUFFER_SIZE];
     for(i=1; i <=10 ; i++){
         card newCard; // creating new card instance;
@@ -652,8 +650,7 @@ void end_turn(){
     amount_cards_played_this_turn =0;
     send_pli(looser);
     s_reset_card_size();
-    int total_turn = DECK_PHYSICAL_SIZE / amount_players;
-    if(amount_turn == total_turn)
+    if(amount_turn == AMOUNT_PLI)
          end_round();
     else
         ask_for_card(looser);
@@ -684,8 +681,15 @@ void send_pli(int player_index){
  */
 void end_round(){
     current_player_turn=0;    
-    //TODO reset information ?
-
+    ask_for_score();
+    if(current_round == 3)
+        end_game();
+    one_ecart_received = FALSE;
+    amount_ecart_received = 0;
+    current_player_turn = 0;
+    updating_score=FALSE;
+    amount_scores_updated = 0;
+    amount_turn = 0;
 }
 /**
  *
@@ -694,7 +698,6 @@ void end_round(){
  */
 void ask_for_score(){
     mess.code = C_ADD_SCORE;
-    amount_scores_updated =0;
     updating_score=TRUE;
     send_message_everybody(mess);
 }
@@ -707,9 +710,25 @@ void update_score(int socket, message msg){
     int scores_temp[MAX_PLAYERS];
     int player_idx = find_player_id_by_socket(socket);
     int current_score;
+    amount_scores_updated++;
     s_read_scores((int **) &scores_temp);
     current_score = scores_temp[player_idx]+msg.score;
     s_write_score(player_idx, current_score);
-    printf("DEBUG score of player %s is now %i\n", players[player_idx].name, current_score);
 
+}
+/**
+ *
+ * This functions ends a game by resetting revellant information.
+ *
+ */
+void end_game(){
+    clear_lobby();
+    current_round=0;
+    char buffer[1];
+    buffer[0]='\0';
+    for(int i=0; i < MAX_PLAYERS ; i++){
+        s_write_score(i, 0);
+        s_write_name(i, buffer);
+    }
+    s_reset_card_size();
 }

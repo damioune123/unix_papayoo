@@ -7,7 +7,7 @@
 #ifndef SERVEUR_H
 #define SERVEUR_H
 #include "socket.h"
-
+#define AMOUNT_PLI 1
 #define COUNTDOWN 10 //Countdown to wait to start the game during lobby registration
 #define SERVER_LOCK "./server.lock"
 typedef void (*fct_ptr)( );
@@ -48,4 +48,6 @@ void end_turn();//finds out the looser of the pli and sends him the cards of the
 void send_pli(int); //This function sends the pli to the player who lost the turn
 void end_round();//ends a round , asks all players to send their score
 void update_score(int, message);//update score in shared memory for a single player
+void ask_for_score();// ask all players to send their score back
+void end_game();//reset game information to be ready for a new game
 #endif
