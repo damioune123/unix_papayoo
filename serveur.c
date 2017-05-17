@@ -272,11 +272,22 @@ void shutdown_server() {
  *
  */
 void clear_lobby() {
+    game_running=FALSE;
+    updating_score=FALSE;
+    amount_scores_updated=0;
+    current_round=0;
+    current_player_turn=0;
+    char buffer[1];
+    buffer[0]='\0';
+    for(int i=0; i < MAX_PLAYERS ; i++){
+        s_write_score(i, 0);
+        s_write_name(i, buffer);
+    }
+    s_reset_card_size();
     for(int i=0; i < amount_players; i++){
         shutdown_socket(players[i].socket);
     }
     reset_players();
-    game_running=FALSE;
 }
 /**
  * This function aims to say if all the connected clients have registered (using their names)
@@ -327,6 +338,7 @@ void remove_player( int socket) {
         sprintf(mess.payload,"The game has been stopped due to a client disconnection\n", namePl);
         mess.code=C_GAME_CANCELLED;
         send_message_everybody(mess);
+        sleep(2);
         clear_lobby();
     }
 }
@@ -417,9 +429,6 @@ void start_round() {
  *
  */
 void deal_cards() {
-    if(amount_players == 0){ // TODO remove this if/else after debug
-        printf("ERROR : deal cards was called when no players were connected\n");
-    }else{
     mess.code=C_INIT_DECK_RECEIVED;
     int amount_cards_player= DECK_PHYSICAL_SIZE/amount_players;
     int idx=0;
@@ -430,7 +439,6 @@ void deal_cards() {
         }
         mess.deck_logical_size = amount_cards_player;
         send_message(mess, players[i].socket);
-    }
     }
 }
 /**
@@ -737,16 +745,8 @@ void end_game(){
     }
     strcpy(mess.payload, players[idx_winner].name);
     send_message_everybody(mess);
-    sleep(20);
+    sleep(1);
     clear_lobby();
-    current_round=0;
-    char buffer[1];
-    buffer[0]='\0';
-    for(int i=0; i < MAX_PLAYERS ; i++){
-        s_write_score(i, 0);
-        s_write_name(i, buffer);
-    }
-    s_reset_card_size();
 }
 void send_basic_info(int socket, message msg){
     if(current_round==0)

@@ -29,6 +29,7 @@ int main(int argc , char *argv[]){
     sigaction(SIGTERM, &interrupt, NULL);
     sigaction(SIGQUIT, &interrupt, NULL);
     sigaction(SIGINT, &interrupt, NULL);
+    sigaction(SIGSEGV, &interrupt, NULL);
     struct sockaddr_in server_addr; // The server's socket address
     if(argc!=3){
         fprintf(stderr, "Usage %s ip port\n", argv[0]); // Usage check
@@ -36,9 +37,9 @@ int main(int argc , char *argv[]){
     }
     strcpy(server_ip, argv[1]);
     port = atoi(argv[2]);
+    try_to_connect(&socketC, &server_addr);
     locate_segment();
     locate_semaphores();
-    try_to_connect(&socketC, &server_addr);
     signup(&socketC);
     printf("PRESS \"s\" KEY Follow by ENTER to display scores\n");
     while(TRUE){
@@ -64,7 +65,6 @@ int main(int argc , char *argv[]){
                     printf("CTRL-D caught, closing client ..\n.");
                     shutdown_socket(socketC);
                     exit(EXIT_SUCCESS);
-
                 }
                 else{
                     buffer_stdin[ret_stdin-1]='\0';
@@ -211,8 +211,8 @@ void add_new_ecart(card * cards_sent, int cards_sent_size){
  * 
  */
 void send_ecart(int client_socket){
-    int *array_ints;
     char buffer[BUFFER_SIZE];
+    int *array_ints;
     if( (array_ints = (int *) malloc(sizeof(int)*5)) == NULL){
         fprintf(stderr, "Erreur malloc\n");
         exit(EXIT_FAILURE);
@@ -222,9 +222,14 @@ void send_ecart(int client_socket){
     int ecart_ok=FALSE;
     while(TRUE){
         int ret;
-        if( (ret=read(0, buffer, BUFFER_SIZE))==-1){
+        if( (ret=read(0, buffer, BUFFER_SIZE))==-1 || errno==EINTR){
             fprintf(stderr, "Erreur read stdin\n");
             exit(EXIT_FAILURE);
+        }
+        else if(ret==0){
+            printf("CTRL-D caught, closing client ..\n.");
+            shutdown_socket(socketC);
+            exit(EXIT_SUCCESS);
         }
         else{
             buffer[ret-1]='\0';
@@ -324,12 +329,22 @@ boolean convert_input_to_integer_array(char * input, int ** array){
  *
  */
 void signup(int * client_socket){
-    int inscriptionOK=FALSE;
-    char messageS[MESSAGE_MAX_LENGTH];
+    char buffer[BUFFER_SIZE];
+    int ret;
     while(TRUE){
-        printf("Enter your name : ");
-        scanf("%s" , messageS);
-        strcpy(mSent.payload, messageS);
+        printf("Enter your name : \n");
+        if( (ret = read(0, buffer, BUFFER_SIZE)) ==-1 ||errno==EINTR){
+            fprintf(stderr,"Error read stdin\n");
+            exit(EXIT_FAILURE);
+        }
+        else if(ret==0){
+            printf("CTRL-D caught, closing client ..\n.");
+            shutdown_socket(socketC);
+            exit(EXIT_SUCCESS);
+        }
+        else
+            buffer[ret-1]='\0';
+        strcpy(mSent.payload, buffer);
         mSent.code=C_ADD_PLAYER;
         send_message( mSent, *client_socket);
         if(mRecv.code==C_OK)
@@ -368,6 +383,7 @@ void try_to_connect(int *socket, struct sockaddr_in *server_addr){
 
 void interrupt_handler(int signum){
     shutdown_socket(socketC);
+    printf("CLEAN EXIT ....\n");
     exit(EXIT_SUCCESS);
 }
 /**
@@ -457,9 +473,14 @@ void play_card(){
     int card_idx;
     char buffer[BUFFER_SIZE];
     while(TRUE){
-        if( (ret = read(0, buffer, BUFFER_SIZE)) ==-1){
+        if( (ret = read(0, buffer, BUFFER_SIZE)) ==-1 || errno ==EINTR){
             fprintf(stderr,"Error read stdin\n");
             exit(EXIT_FAILURE);
+        }
+        else if(ret==0){
+            printf("CTRL-D caught, closing client ..\n.");
+            shutdown_socket(socketC);
+            exit(EXIT_SUCCESS);
         }
         else{
             buffer[ret-1]='\0';
@@ -468,6 +489,7 @@ void play_card(){
                 break;
             printf("Please choose a card between 1 and %i\n", deck_logical_size);
         }
+        fflush(stdin);
     }
     show_card(deck[--card_idx], buffer, 0);
     printf("You choose to play :\n%s\n", buffer);

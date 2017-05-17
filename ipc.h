@@ -10,7 +10,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include "utils.h"
-#define MAX_PLAYERS 4
+#define MAX_PLAYERS 3
 #define MIN_PLAYERS 2
 #define BUFFER_SIZE 255
 typedef struct s_mem{

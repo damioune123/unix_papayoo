@@ -68,7 +68,7 @@ void connect_to_server(int *client_socket , struct sockaddr_in *server_addr, cha
 	//Connect to remote server
 	if (connect(*client_socket , (struct sockaddr *)server_addr , sizeof(*server_addr)) < 0)
 	{
-		perror("connect failed. Error");
+		perror("No connection could be established with the remote server\n");
 		exit(EXIT_FAILURE);
 	}
 	printf("Connected to server\n");
