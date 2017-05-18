@@ -139,8 +139,9 @@ int main(int argc , char *argv[]){
  *
  */
 void init_deck(card * cards_sent, int cards_sent_size){
+    int i;
     deck_logical_size = cards_sent_size;
-    for(int i=0; i < deck_logical_size ;i++){
+    for( i=0; i < deck_logical_size ;i++){
         memcpy(&deck[i], &cards_sent[i], sizeof(card));
     }
     send_ecart(socketC);
@@ -154,11 +155,12 @@ void init_deck(card * cards_sent, int cards_sent_size){
  *
  */
 void show_info(int option){
+    int i;
     s_read_names((char**)players_names);
     s_read_scores((int **) scores);
     printf("-------------------INFO REVIEW--------------------------\n");
     printf("Current scores :\n");
-    for(int i=0; i < info.amount_players ; i++){
+    for( i=0; i < info.amount_players ; i++){
         if(i==info.player_index)
             printf("YOU : Name : %s | Score : %i\n", players_names[i], scores[i]);
         else
@@ -197,10 +199,11 @@ void show_info(int option){
  *
  */
 void add_new_ecart(card * cards_sent, int cards_sent_size){
+    int i;
     printf("-----Here are the cards sent by player %s ---- \n", players_names[(info.player_index+1)%info.amount_players]);
     show_cards(cards_sent, cards_sent_size, 0);
     printf("----------------------------------------\n");
-    for(int i=0; i < cards_sent_size; i++){
+    for(i=0; i < cards_sent_size; i++){
         memcpy(&deck[deck_logical_size++], &cards_sent[i], sizeof(card));
     }
     waiting_for_ecart = FALSE;
@@ -289,6 +292,7 @@ void remove_ecart(int *indexes){
  *
  */
 boolean convert_input_to_integer_array(char * input, int ** array){
+    int i, j;
     char *numberS;
     int number;
     int number_typed_in=0;
@@ -308,8 +312,8 @@ boolean convert_input_to_integer_array(char * input, int ** array){
         }
     }
     //seek doublons
-    for(int i=0; i <5 ; i++){
-        for(int j=0; j<5;j++){
+    for(i=0; i <5 ; i++){
+        for(j=0; j<5;j++){
             if(i!=j){
                 if((*array)[i]==(*array)[j])
                     return FALSE;
@@ -397,8 +401,9 @@ void interrupt_handler(int signum){
  * @param int option : 0 = don't display player who last played the card, 1 =do
  */
 void show_cards(card* deck, int logical_size, int option){
+    int i;
     char display[BUFFER_SIZE];
-    for(int i = 0; i < logical_size; i++){
+    for(i = 0; i < logical_size; i++){
         show_card(deck[i], display, option);
         printf("CARD %i : %s\n",i+1, display);
     }
@@ -524,16 +529,18 @@ void show_pli(){
  *
  */
 void remove_card(int card_idx){
-    for(int i=card_idx; i< deck_logical_size -1 ; i++){
+    int i;
+    for(i=card_idx; i< deck_logical_size -1 ; i++){
         memcpy(&deck[i], &deck[i+1], sizeof(card));
     }
     deck_logical_size--;
 
 }
 void add_pli(card * pli_sent, int pli_sent_size){
+    int i;
     printf("You lost the turn, following cards will be added to you plis' deck\n");
     show_cards(pli_sent, pli_sent_size, 0);
-    for(int i= pli_logical_size; i < pli_logical_size + pli_sent_size; i++){
+    for(i= pli_logical_size; i < pli_logical_size + pli_sent_size; i++){
         memcpy(&plis[i], &pli_sent[i%pli_sent_size], sizeof(card));
     }
     pli_logical_size += pli_sent_size;
@@ -549,8 +556,9 @@ void add_pli(card * pli_sent, int pli_sent_size){
  *
  */
 void add_score(){
+    int i;
     int score=0;
-    for(int i = 0; i < pli_logical_size ; i++){
+    for(i = 0; i < pli_logical_size ; i++){
         if(plis[i].type == PAYOO_CONST)
             score+= plis[i].number;
         if(plis[i].type==info.papayoo && plis[i].number ==7)

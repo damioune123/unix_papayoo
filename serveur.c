@@ -168,7 +168,8 @@ void add_player(int socket, message mesRecv) {
     send_message(mess, socket);
     printf("Player %s has joined the lobby\n", players[idx_player].name);
     printf("Current players :\n");
-    for(int i =0; i < amount_players ; i++){
+    int i;
+    for(i =0; i < amount_players ; i++){
         if(players[i].is_registered)
             printf("Player number %i : %s is registered \n",i, players[i].name);
         else
@@ -185,7 +186,8 @@ void add_player(int socket, message mesRecv) {
  *
  */
 int find_player_id_by_socket(int socket){
-    for(int j = 0; j < MAX_PLAYERS; j++){
+    int j;
+    for(j = 0; j < MAX_PLAYERS; j++){
         if(players[j].socket == socket)
             return j;
     }
@@ -204,7 +206,8 @@ void receive_ecart_from_player(int socket, message msg){
     int player_id = find_player_id_by_socket(socket);
     one_ecart_received = TRUE;
     amount_ecart_received++;
-    for(int i=0; i < 5; i++){
+    int i;
+    for( i=0; i < 5; i++){
         memcpy(&ecarts_received[player_id].cards[i], &msg.deck[i], sizeof(card));
     }
 }
@@ -218,8 +221,10 @@ void receive_ecart_from_player(int socket, message msg){
 void send_ecart_back(){
     mess.code = C_ALL_ECART_DECK_RECEIVED;
     mess.deck_logical_size = 5;
-    for(int i =0; i < amount_players ; i++){
-        for(int j=0; j < 5 ; j++){
+    int i=0;
+    int j=0;
+    for(i =0; i < amount_players ; i++){
+        for(j=0; j < 5 ; j++){
             memcpy(&mess.deck[j], &ecarts_received[i].cards[j], sizeof(card));
         }
         send_message(mess, players[(i+1)%amount_players].socket);
@@ -234,7 +239,8 @@ void send_ecart_back(){
  *
  */
 void reset_players(){
-    for(int  i=0; i < MAX_PLAYERS; i++){
+    int i =0;
+    for(  i=0; i < MAX_PLAYERS; i++){
         reset_player(&players[i]);
     }
     amount_players=0;
@@ -279,12 +285,13 @@ void clear_lobby() {
     current_player_turn=0;
     char buffer[1];
     buffer[0]='\0';
-    for(int i=0; i < MAX_PLAYERS ; i++){
+    int i =0;
+    for(i=0; i < MAX_PLAYERS ; i++){
         s_write_score(i, 0);
         s_write_name(i, buffer);
     }
     s_reset_card_size();
-    for(int i=0; i < amount_players; i++){
+    for(i=0; i < amount_players; i++){
         shutdown_socket(players[i].socket);
     }
     reset_players();
@@ -297,7 +304,8 @@ void clear_lobby() {
  *
  */
 boolean  all_players_registered(){
-    for(int i=0; i < amount_players; i++){
+    int i=0;
+    for(i=0; i < amount_players; i++){
         if(!players[i].is_registered)
             return FALSE;
     }
@@ -326,7 +334,8 @@ void remove_player( int socket) {
     else
         strcpy(namePl, "unregistered (Anonymous)");
     reset_player(&players[idx_player]);
-    for(int j=idx_player;j< amount_players; j++ ){
+    int j;
+    for(j=idx_player;j< amount_players; j++ ){
         players[j]=players[j+1];
     }
     amount_players--;
@@ -432,8 +441,10 @@ void deal_cards() {
     mess.code=C_INIT_DECK_RECEIVED;
     int amount_cards_player= DECK_PHYSICAL_SIZE/amount_players;
     int idx=0;
-    for(int i=0; i < amount_players ; i++){
-        for(int j = 0; j < amount_cards_player ;j ++){
+    int i;
+    int j;
+    for( i=0; i < amount_players ; i++){
+        for(j = 0; j < amount_cards_player ;j ++){
             memcpy(&mess.deck[j],&deck[idx], sizeof(card));
             idx++;
         }
@@ -448,7 +459,8 @@ void deal_cards() {
  * @param message msg : the message structure (see message.h) to send
  */
 void send_message_everybody(message msg){
-    for(int i=0; i < amount_players; i++){
+    int i;
+    for(i=0; i < amount_players; i++){
         send_message(msg, players[i].socket);
     }
 }
@@ -550,7 +562,8 @@ card add_card(card newCard){
  */
 void show_cards(card* deck, int logical_size){
     char display[BUFFER_SIZE];
-    for(int i = 0; i < logical_size; i++){
+    int i;
+    for( i = 0; i < logical_size; i++){
         show_card(deck[i], display);
         printf("CARD %i : %s\n",i+1, display);
     }
@@ -594,11 +607,12 @@ void find_papayoo(){
     papayoo = rand() % 4; 
 }
 void send_basic_info_everyone(){
+    int i;
     mess.code=C_BASIC_INFO;
     mess.info.amount_players=amount_players;
     mess.info.papayoo=papayoo;
     mess.info.current_round=current_round;
-    for(int i=0; i < amount_players ; i++){
+    for(i=0; i < amount_players ; i++){
         mess.info.player_index=i;
         send_message(mess, players[i].socket);
     }
@@ -645,13 +659,14 @@ void receive_played_card(int socket, message msg){
  *
  */
 void end_turn(){
+    int i;
     amount_turn++;
     card pli[MAX_PLAYERS];
     s_read_cards((card**) &pli);
     int turn_type = pli[0].type;
     int max_value = pli[0].number;
     int looser = pli[0].last_played;
-    for(int i=1;i< amount_players;i++){
+    for(i=1;i< amount_players;i++){
         if(pli[i].type ==turn_type && pli[i].number > max_value){
             looser =pli[i].last_played;
             max_value = pli[i].number;
@@ -675,11 +690,12 @@ void end_turn(){
  *
  */
 void send_pli(int player_index){
+    int i; 
     card pli[MAX_PLAYERS];
     s_read_cards((card **) &pli);
     mess.code = C_ADD_PLI;
     int pli_size = s_read_cards_size();
-    for(int i =0; i < pli_size ; i++){
+    for(i =0; i < pli_size ; i++){
         memcpy(&mess.deck[i], &pli[i], sizeof(card));
     }
     mess.deck_logical_size=pli_size;
@@ -732,12 +748,13 @@ void update_score(int socket, message msg){
  *
  */
 void end_game(){
+    int i;
     mess.code =C_END_GAME;
     int final_scores[MAX_PLAYERS];
     s_read_scores((int **) &final_scores);
     int idx_winner;
     int min=251;
-    for(int i=0; i < amount_players ; i++){
+    for(i=0; i < amount_players ; i++){
         if(min > final_scores[i]){
             min = final_scores[i];
             idx_winner = i;
